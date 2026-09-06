@@ -1,0 +1,2928 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>학교 서바이벌</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #1a1a2e;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+    #game-container {
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+</head>
+<body>
+  <div id="game-container"></div>
+  <script>
+// Phaser 3 대규모 뱀파이어 서바이벌 / 탕탕특공대 스타일 (단일 파일 배포용)
+
+const SKILL_DATA = {
+  // ── 액티브 무기 ──────────────────────────────
+  praise:    { name: '바른말 고운말',    desc: '가장 가까운 방해꾼에게 긍정적인 단어를 날려보냅니다.',        icon: '💬', type: 'active', evoPassive: 'badge',      evoName: '황금빛 칭찬'      },
+  recorder:  { name: '리코더 연주',      desc: '캐릭터 주변에 아름다운 음악 파동을 만듭니다.',               icon: '🎵', type: 'active', evoPassive: 'power',      evoName: '오케스트라 합주'   },
+  bubble:    { name: '비눗방울',         desc: '느리지만 맞은 방해꾼을 3초 동안 느리게 만듭니다.',           icon: '🫧', type: 'active', evoPassive: 'shoes',      evoName: '거대 비눗방울'    },
+  orbit:     { name: '태양계 모형',      desc: '빙글빙글 도는 행성 모형 방어막을 만듭니다.',               icon: '🪐', type: 'active', evoPassive: 'book',       evoName: '은하계 방어막'    },
+  crosswalk: { name: '안전 횡단보도',    desc: '바닥에 초록불 안전지대를 켭니다.',                          icon: '🚸', type: 'active', evoPassive: 'hourglass',  evoName: '어린이 보호구역'  },
+  airplane:  { name: '종이 비행기',      desc: '일직선으로 날아가며 다수의 방해꾼을 관통합니다.',             icon: '✈️', type: 'active', evoPassive: 'magnet',     evoName: '황금 여객기'      },
+  idea:      { name: '반짝이는 번뜩임',  desc: '무작위 방해꾼 머리 위로 깨달음의 번개를 떨어뜨립니다.',      icon: '💡', type: 'active', evoPassive: 'glasses',    evoName: '천재의 번뜩임'    },
+  water:     { name: '식물 물주기',      desc: '힘차게 뿌려지다 서서히 멈추는 물방울을 발사합니다.',         icon: '💧', type: 'active', evoPassive: 'watch',      evoName: '장마철 호우'      },
+  library:   { name: '도서관 책 소나기', desc: '8방향으로 책을 힘차게 날려 방해꾼을 물리칩니다.',            icon: '📚', type: 'active', evoPassive: 'diary',      evoName: '마법 도서관 폭풍' },
+  cleanroom: { name: '청소하기',         desc: '청소의 기운이 사방으로 퍼지며 방해꾼을 몰아냅니다.',         icon: '🧹', type: 'active', evoPassive: 'lunchbox',   evoName: '대청소 작전'      },
+  hula:      { name: '훌라후프 굴리기',  desc: '거대한 훌라후프를 날려 화면 끝까지 관통 피해를 입힙니다.',    icon: '⭕', type: 'active', evoPassive: 'pencilcase', evoName: '무한 훌라쇼'    },
+  paint:     { name: '수채화 그리기',    desc: '아름다운 물감 팔레트가 바닥에 펼쳐져 방해꾼을 느리게 만듭니다.', icon: '🎨', type: 'active', evoPassive: 'glasses',    evoName: '무지개 물감 파레트' },
+  math:      { name: '수학 공식 번개',   desc: '연쇄 번개를 일으켜 주변 방해꾼을 잇따라 학습시킵니다.',      icon: '⚡', type: 'active', evoPassive: 'clover',     evoName: '천재 수학자'      },
+  chalk:     { name: '집중의 시선',      desc: '바라보는 방향으로 여러 개의 날카로운 시선을 빠르게 쏩니다.',   icon: '👁️', type: 'active', evoPassive: 'power',      evoName: '매의 눈빛'      },
+  jumprope:  { name: '안전거리 유지',    desc: '앞쪽으로 안전바를 넓게 휘둘러 방해꾼을 밀쳐내며 타격합니다.', icon: '🚧', type: 'active', evoPassive: 'milk',       evoName: '절대 안전 구역'    },
+  alcohol:   { name: '열정',             desc: '뜨거운 열정의 불꽃을 쏴 방해꾼에게 지속 피해를 입힙니다.',   icon: '🔥', type: 'active', evoPassive: 'fan',        evoName: '불타는 학구열'      },
+  bell:      { name: '수업 종',          desc: '종을 울려 화면 안의 모든 방해꾼을 얼려버리고 피해를 입힙니다.', icon: '🔔', type: 'active', evoPassive: 'watch',      evoName: '방과후 종소리'    },
+  soccer:    { name: '축구 수업',        desc: '축구공을 강하게 차서 가까운 방해꾼을 향해 날립니다.',        icon: '⚽', type: 'active', evoPassive: 'shoes',      evoName: '월드컵 슛'        },
+  ddakji:    { name: '딱지치기',         desc: '좁은 사거리 안의 방해꾼 중 하나를 랜덤으로 노려 강한 한 방을 먹입니다.', icon: '🎯', type: 'active', evoPassive: 'power',      evoName: '황금 딱지의 일격'  },
+  mop:       { name: '물청소',           desc: '바닥에 물걸레 자국을 남겨 방해꾼에게 지속 피해를 입힙니다.',   icon: '🪣', type: 'active', evoPassive: 'moneybook',  evoName: '반짝반짝 클린 대작전' },
+
+  // ── 패시브 장비 ──────────────────────────────
+  shoes:      { name: '가벼운 실내화',   desc: '이동 속도가 15% 증가합니다.',                               icon: '👟', type: 'passive' },
+  milk:       { name: '신선한 우유',      desc: '최대 체력이 20 증가하고 조금씩 회복됩니다.',                 icon: '🥛', type: 'passive' },
+  glasses:    { name: '돋보기',           desc: '모든 무기의 크기와 타격 범위가 15% 커집니다.',               icon: '🔍', type: 'passive' },
+  watch:      { name: '스마트워치',       desc: '모든 무기의 쿨타임이 10% 감소합니다.',                       icon: '⌚', type: 'passive' },
+  magnet:     { name: '자석 책받침',      desc: '경험치 획득 반경이 30% 넓어집니다.',                         icon: '🧲', type: 'passive' },
+  power:      { name: '100점 시험지',     desc: '모든 무기의 공격력이 15% 증가합니다.',                       icon: '💯', type: 'passive' },
+  book:       { name: '두꺼운 백과사전',  desc: '방해꾼에게 부딪힐 때 잃는 체력을 줄여줍니다.',               icon: '📘', type: 'passive' },
+  hourglass:  { name: '모래시계',         desc: '투사체와 장판의 유지 시간이 길어집니다.',                     icon: '⏳', type: 'passive' },
+  friend:     { name: '단짝 친구',        desc: '모든 무기의 발사체와 장판 개수가 1개씩 늘어납니다.',          icon: '👯', type: 'passive' },
+  badge:      { name: '모범생 배지',      desc: '획득하는 경험치량이 20% 증가합니다.',                        icon: '🏅', type: 'passive' },
+  clover:     { name: '네잎클로버',       desc: '공격 시 10% 확률로 2배의 피해(크리티컬)를 입힙니다.',        icon: '🍀', type: 'passive' },
+  fan:        { name: '교실 선풍기',      desc: '선풍기 바람을 타고 발사체가 날아가는 속도가 20% 빨라집니다.',icon: '🌀', type: 'passive' },
+  diary:      { name: '알림장',           desc: '무기 쿨타임이 추가로 8% 감소합니다.',                        icon: '📓', type: 'passive' },
+  lunchbox:   { name: '도시락통',         desc: '체력 회복량이 추가로 올라가고 체력이 10 증가합니다.',         icon: '🍱', type: 'passive' },
+  pencilcase: { name: '필통',             desc: '모든 무기의 공격력이 추가로 12% 증가합니다.',                icon: '🖊️', type: 'passive' },
+  moneybook:  { name: '용돈기입장',       desc: '몬스터 처치 시 골드 획득 확률과 양이 늘어납니다.',            icon: '📒', type: 'passive' },
+  sticker:    { name: '칭찬 스티커판',    desc: '가끔 화면에 스티커가 나타나고, 주우면 잠시 모든 능력치가 상승합니다.', icon: '⭐', type: 'passive' },
+};
+
+class BootScene extends Phaser.Scene {
+  constructor() { super('BootScene'); }
+  preload() {
+    let g = this.make.graphics({ x: 0, y: 0, add: false });
+
+    // ── 헬퍼: 픽셀 단위 점 찍기 (1x1 fillRect)
+    const px = (x, y, col) => { g.fillStyle(col); g.fillRect(x, y, 1, 1); };
+    const pxr = (x, y, w, h, col) => { g.fillStyle(col); g.fillRect(x, y, w, h); };
+
+    // ══════════════════════════════════════════════
+    // 플레이어 1: 전교 회장 (파란 교복, 32x32)
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 머리카락 (검정)
+    pxr(10,2,12,3,0x1a1a1a);
+    // 얼굴 (살색)
+    pxr(10,5,12,8,0xfad7a0);
+    // 눈 (검정)
+    pxr(12,7,2,2,0x1a1a1a); pxr(18,7,2,2,0x1a1a1a);
+    // 입 (분홍)
+    pxr(14,11,4,1,0xe74c3c);
+    // 교복 몸통 (파랑)
+    pxr(8,13,16,10,0x2471a3);
+    // 교복 칼라 (흰색)
+    pxr(13,13,6,3,0xffffff);
+    // 배지 (노랑)
+    pxr(9,14,2,2,0xf1c40f);
+    // 소매/팔 (파랑)
+    pxr(5,13,3,8,0x2471a3); pxr(24,13,3,8,0x2471a3);
+    // 손 (살색)
+    pxr(4,21,4,3,0xfad7a0); pxr(24,21,4,3,0xfad7a0);
+    // 바지 (진파랑)
+    pxr(10,23,12,5,0x1a5276);
+    // 신발 (검정)
+    pxr(9,28,5,4,0x1a1a1a); pxr(18,28,5,4,0x1a1a1a);
+    g.generateTexture('player', 32, 32);
+
+    // ══════════════════════════════════════════════
+    // 플레이어 2: 장난꾸러기 (빨간 옷, 32x32)
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 헝클어진 머리카락 (갈색)
+    pxr(9,1,14,4,0x6e2f00); pxr(7,2,3,2,0x6e2f00); pxr(22,2,3,2,0x6e2f00); pxr(11,0,4,2,0x6e2f00); pxr(17,0,3,2,0x6e2f00);
+    // 얼굴 (살색)
+    pxr(10,5,12,8,0xfad7a0);
+    // 눈 (장난기 있는 반달눈)
+    pxr(12,7,3,1,0x1a1a1a); pxr(12,8,1,1,0x1a1a1a); pxr(14,8,1,1,0x1a1a1a);
+    pxr(18,7,3,1,0x1a1a1a); pxr(18,8,1,1,0x1a1a1a); pxr(20,8,1,1,0x1a1a1a);
+    // 웃음 (크게)
+    pxr(13,11,6,1,0xe74c3c); pxr(12,10,1,2,0xe74c3c); pxr(19,10,1,2,0xe74c3c);
+    // 빨간 티셔츠
+    pxr(8,13,16,10,0xe74c3c);
+    // 티셔츠 줄무늬 (흰줄)
+    pxr(8,16,16,2,0xf1948a);
+    // 소매
+    pxr(5,13,3,8,0xe74c3c); pxr(24,13,3,8,0xe74c3c);
+    // 손
+    pxr(4,21,4,3,0xfad7a0); pxr(24,21,4,3,0xfad7a0);
+    // 반바지 (진빨강)
+    pxr(10,23,12,5,0x922b21);
+    // 신발 (흰색 운동화)
+    pxr(9,28,5,4,0xecf0f1); pxr(18,28,5,4,0xecf0f1);
+    pxr(9,31,5,1,0x95a5a6); pxr(18,31,5,1,0x95a5a6);
+    g.generateTexture('player_2', 32, 32);
+
+    // ══════════════════════════════════════════════
+    // 플레이어 3: 운동선수 (초록 체육복, 32x32)
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 짧은 검정 머리
+    pxr(10,2,12,3,0x1a1a1a); pxr(8,4,4,2,0x1a1a1a); pxr(20,4,4,2,0x1a1a1a);
+    // 얼굴 (살색, 약간 넓음)
+    pxr(9,5,14,8,0xfad7a0);
+    // 눈 (강렬한 눈)
+    pxr(11,7,3,2,0x1a1a1a); pxr(18,7,3,2,0x1a1a1a);
+    // 굳게 다문 입
+    pxr(13,11,6,1,0xc0392b);
+    // 체육복 (초록, 넓은 어깨)
+    pxr(6,13,20,10,0x27ae60);
+    // 체육복 라인 (흰줄)
+    pxr(6,14,2,8,0xffffff); pxr(24,14,2,8,0xffffff);
+    // 소매 (짧음, 굵음)
+    pxr(3,13,4,6,0x27ae60); pxr(25,13,4,6,0x27ae60);
+    // 손 (굵음)
+    pxr(2,19,5,3,0xfad7a0); pxr(25,19,5,3,0xfad7a0);
+    // 반바지 (진초록)
+    pxr(9,23,14,5,0x1e8449);
+    // 신발 (흰 운동화)
+    pxr(8,28,6,4,0xecf0f1); pxr(18,28,6,4,0xecf0f1);
+    pxr(8,31,6,1,0x95a5a6); pxr(18,31,6,1,0x95a5a6);
+    g.generateTexture('player_3', 32, 32);
+
+    // ══════════════════════════════════════════════
+    // 플레이어 4: 음악가 (베레모+보타이, 32x32)
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 베레모 (자주색)
+    pxr(9,1,14,3,0x6c3483); pxr(8,3,3,2,0x6c3483); pxr(19,0,4,2,0x8e44ad);
+    // 앞머리 살짝 (짙은 갈색)
+    pxr(9,4,2,2,0x4a2c14); pxr(21,4,2,2,0x4a2c14);
+    // 얼굴 (살색)
+    pxr(10,5,12,8,0xfad7a0);
+    // 눈 (차분한 눈)
+    pxr(12,7,2,2,0x1a1a1a); pxr(18,7,2,2,0x1a1a1a);
+    // 은은한 미소
+    pxr(14,11,4,1,0x943126);
+    // 몸통 - 검정 재킷
+    pxr(8,13,16,10,0x1c1c1c);
+    // 흰 셔츠 깃
+    pxr(13,13,6,3,0xffffff);
+    // 보타이 (빨강)
+    pxr(14,15,4,2,0xc0392b);
+    // 소매 (검정)
+    pxr(5,13,3,8,0x1c1c1c); pxr(24,13,3,8,0x1c1c1c);
+    // 손 (살색)
+    pxr(4,21,4,3,0xfad7a0); pxr(24,21,4,3,0xfad7a0);
+    // 바지 (짙은 회색)
+    pxr(10,23,12,5,0x2c2c2c);
+    // 신발 (검정 구두)
+    pxr(9,28,5,4,0x0d0d0d); pxr(18,28,5,4,0x0d0d0d);
+    g.generateTexture('player_4', 32, 32);
+
+    // ══════════════════════════════════════════════
+    // 플레이어 5: 미술부원 (물감 얼룩 스목, 32x32)
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 머리카락 (검정 단발)
+    pxr(8,1,16,4,0x2c2c2c); pxr(7,4,3,6,0x2c2c2c); pxr(22,4,3,6,0x2c2c2c);
+    // 얼굴
+    pxr(9,4,14,8,0xfad7a0);
+    // 눈
+    pxr(12,7,2,2,0x1a1a1a); pxr(19,7,2,2,0x1a1a1a);
+    // 입
+    pxr(14,11,4,1,0xc0392b);
+    // 몸통 - 미술 가운(연회색 스목)
+    pxr(6,13,20,12,0xecf0f1);
+    // 소매
+    pxr(3,13,4,9,0xecf0f1); pxr(25,13,4,9,0xecf0f1);
+    // 손
+    pxr(2,21,4,3,0xfad7a0); pxr(26,21,4,3,0xfad7a0);
+    // 물감 얼룩 (여러 색 점)
+    pxr(9,16,3,3,0xe74c3c); pxr(18,15,3,3,0x3498db); pxr(13,20,3,3,0xf1c40f); pxr(21,20,3,3,0x2ecc71); pxr(8,22,2,2,0x9b59b6);
+    // 바지 (남색)
+    pxr(9,25,14,4,0x2c3e50);
+    // 신발 (운동화)
+    pxr(8,29,6,3,0xffffff); pxr(18,29,6,3,0xffffff);
+    g.generateTexture('player_5', 32, 32);
+
+    // ══════════════════════════════════════════════
+    // 플레이어 6: 모범생 (조끼+넥타이+배지, 32x32)
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 머리 (단정한 짧은 갈색 머리)
+    pxr(9,1,14,4,0x5a3921); pxr(8,4,2,4,0x5a3921); pxr(22,4,2,4,0x5a3921);
+    // 얼굴
+    pxr(10,4,12,8,0xfad7a0);
+    // 눈
+    pxr(12,7,2,2,0x1a1a1a); pxr(18,7,2,2,0x1a1a1a);
+    // 입
+    pxr(14,11,4,1,0x943126);
+    // 몸통 - 흰 셔츠 위에 네이비 조끼
+    pxr(8,13,16,10,0xffffff);
+    pxr(9,14,14,9,0x1a3c6e);
+    // 흰 셔츠 깃
+    pxr(13,13,6,2,0xffffff);
+    // 빨간 넥타이
+    pxr(14,15,4,7,0xc0392b);
+    // 소매 (흰색)
+    pxr(5,13,3,8,0xffffff); pxr(24,13,3,8,0xffffff);
+    // 손
+    pxr(4,21,4,3,0xfad7a0); pxr(24,21,4,3,0xfad7a0);
+    // 모범생 배지 (금색)
+    pxr(10,16,2,2,0xf1c40f);
+    // 바지 (짙은 회색)
+    pxr(10,23,12,5,0x34495e);
+    // 신발 (검정 구두)
+    pxr(9,28,5,4,0x0d0d0d); pxr(18,28,5,4,0x0d0d0d);
+    g.generateTexture('player_6', 32, 32);
+
+    // ══════════════════════════════════════════════
+    // 적 1: 잡념/딴생각 (24x24) - 구름+물음표 모양
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 구름 몸통 (보라)
+    pxr(4,8,16,10,0x8e44ad);
+    pxr(2,10,20,7,0x8e44ad);
+    pxr(6,6,12,4,0x9b59b6);
+    pxr(8,4,8,4,0xa569bd);
+    // 구름 하이라이트
+    pxr(6,6,4,2,0xbb8fce);
+    // 눈 (빨간 점)
+    pxr(8,11,2,2,0xff0000); pxr(14,11,2,2,0xff0000);
+    // 물음표
+    pxr(11,8,2,1,0xffffff); pxr(10,9,1,1,0xffffff); pxr(12,9,1,1,0xffffff);
+    pxr(12,10,1,1,0xffffff); pxr(11,11,1,1,0xffffff); pxr(11,13,2,1,0xffffff);
+    g.generateTexture('enemy', 24, 24);
+
+    // ══════════════════════════════════════════════
+    // 적 2: 스마트폰 유혹 (20x20) - 폰 모양+눈
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 폰 외곽 (검정)
+    pxr(3,0,14,20,0x1a1a1a);
+    // 화면 (하늘색)
+    pxr(5,2,10,13,0x5dade2);
+    // 화면 반짝임
+    pxr(5,2,3,3,0xa9cce3);
+    // 앱 아이콘들 (노랑, 초록, 빨강)
+    pxr(6,4,3,3,0xf1c40f); pxr(11,4,3,3,0x2ecc71);
+    pxr(6,9,3,3,0xe74c3c); pxr(11,9,3,3,0x9b59b6);
+    // 중독된 눈 (빨간 하트 눈)
+    pxr(6,16,2,2,0xff4757); pxr(12,16,2,2,0xff4757);
+    // 홈버튼
+    pxr(8,17,4,2,0x2c3e50);
+    g.generateTexture('enemy_fast', 20, 20);
+
+    // ══════════════════════════════════════════════
+    // 적 3: 쏟아지는 졸음 (48x48) - 졸린 얼굴
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 머리 (회색 큰 원)
+    pxr(4,4,40,40,0x85929e);
+    pxr(2,10,44,30,0x85929e);
+    pxr(8,2,32,44,0x85929e);
+    // 얼굴색 (연한 회색)
+    pxr(8,8,32,32,0xaab7b8);
+    // 반쯤 감긴 눈 (졸린 눈)
+    pxr(12,18,8,6,0xffffff); pxr(28,18,8,6,0xffffff);
+    pxr(12,18,8,3,0x2c3e50); pxr(28,18,8,3,0x2c3e50);
+    // 눈동자
+    pxr(14,20,4,3,0x1a1a1a); pxr(30,20,4,3,0x1a1a1a);
+    // 처진 입
+    pxr(17,32,14,2,0x7f8c8d);
+    pxr(15,30,2,3,0x7f8c8d); pxr(31,30,2,3,0x7f8c8d);
+    // ZZZ 글씨 느낌 (흰 픽셀)
+    pxr(34,8,8,1,0xffffff); pxr(38,9,4,1,0xffffff); pxr(34,10,8,1,0xffffff);
+    pxr(38,13,6,1,0xffffff); pxr(40,14,3,1,0xffffff); pxr(38,15,6,1,0xffffff);
+    g.generateTexture('enemy_tank', 48, 48);
+
+    // ══════════════════════════════════════════════
+    // 적 4: 숙제 폭탄 (26x26) - 폭탄+숙제쪽지
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 폭탄 몸통 (검정, 둥근 사각으로 근사)
+    pxr(4,8,18,14,0x1a1a1a);
+    pxr(6,6,14,3,0x1a1a1a);
+    pxr(2,10,4,10,0x1a1a1a); pxr(20,10,4,10,0x1a1a1a);
+    // 하이라이트
+    pxr(7,10,4,3,0x4a4a4a);
+    // 심지
+    pxr(12,2,2,5,0x784212);
+    // 불꽃
+    pxr(13,0,2,2,0xf1c40f); pxr(14,1,1,1,0xe74c3c);
+    // 숙제 쪽지 (흰 종이 + 빨간 X)
+    pxr(9,12,8,8,0xffffff);
+    pxr(10,14,2,1,0xe74c3c); pxr(13,14,2,1,0xe74c3c);
+    pxr(11,16,3,1,0xe74c3c);
+    g.generateTexture('enemy_bomb', 26, 26);
+
+    // ══════════════════════════════════════════════
+    // 적 5: 미세먼지 구름 (30x30) - 뿌연 스모그
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 뿌연 몸통 (누런 갈색 스모그, 여러 겹)
+    pxr(3,10,24,14,0x9a8478);
+    pxr(0,14,30,9,0x9a8478);
+    pxr(6,6,18,6,0xab9689);
+    pxr(9,3,12,5,0xbcab9e);
+    // 밝은 하이라이트
+    pxr(8,7,6,3,0xcdbfb2);
+    // 미세먼지 입자
+    pxr(6,16,2,2,0x5d4b3d); pxr(14,12,2,2,0x5d4b3d); pxr(20,17,2,2,0x5d4b3d); pxr(11,20,2,2,0x5d4b3d);
+    // 흐린 눈 (탁한 빨강, 반쯤 감김)
+    pxr(9,16,3,2,0x8b3a3a); pxr(18,16,3,2,0x8b3a3a);
+    g.generateTexture('enemy_dust', 30, 30);
+
+    // ══════════════════════════════════════════════
+    // 보스: 공포의 단원 평가 (48x48) - 시험지 형태
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 시험지 배경 (흰색)
+    pxr(4,2,40,44,0xffffff);
+    // 빨간 상단 줄 (시험지 헤더)
+    pxr(4,2,40,6,0xc0392b);
+    // 헤더 텍스트 느낌 (흰 선)
+    pxr(8,3,24,1,0xffffff); pxr(8,5,16,1,0xffffff);
+    // 문제 줄들 (검정선)
+    pxr(8,12,32,2,0x2c3e50);
+    pxr(8,18,32,2,0x2c3e50);
+    pxr(8,24,32,2,0x2c3e50);
+    pxr(8,30,32,2,0x2c3e50);
+    // 빨간 X 표시들 (틀린 답)
+    pxr(34,11,2,2,0xe74c3c); pxr(34,11,6,6,0x00000000);
+    g.fillStyle(0xe74c3c); g.fillRect(34,11,2,6); g.fillRect(36,11,4,2); g.fillRect(36,15,4,2);
+    g.fillStyle(0xe74c3c); g.fillRect(34,20,2,6); g.fillRect(36,20,4,2); g.fillRect(36,24,4,2);
+    // 보스 빨간 눈 (시험지 위에)
+    pxr(12,34,8,8,0xff0000); pxr(28,34,8,8,0xff0000);
+    pxr(14,36,4,4,0xffffff); pxr(30,36,4,4,0xffffff);
+    pxr(15,37,2,2,0x000000); pxr(31,37,2,2,0x000000);
+    // 분노한 눈썹
+    pxr(11,33,10,2,0xc0392b); pxr(27,33,10,2,0xc0392b);
+    g.generateTexture('enemy_boss', 48, 48);
+
+    // ══════════════════════════════════════════════
+    // 투사체: 바른말 고운말 텍스트 (텍스처 불필요, 텍스트 객체로 대체할 예정이므로 놔둡니다)
+    // ══════════════════════════════════════════════
+
+    // ══════════════════════════════════════════════
+    // 리코더 음표 (16x16)
+    // ══════════════════════════════════════════════
+    g.clear();
+    pxr(4,10,6,4,0x9b59b6);
+    pxr(3,11,8,4,0x9b59b6); // 음표 머리
+    pxr(8,2,2,10,0x9b59b6); // 기둥
+    pxr(8,2,6,2,0x9b59b6);
+    pxr(14,2,2,4,0x9b59b6); // 꼬리
+    g.generateTexture('recorder_note', 16, 16);
+
+    // ══════════════════════════════════════════════
+    // 투사체: 비눗방울 (24x24)
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 반투명 파란 원
+    g.fillStyle(0xaed6f1, 0.5); g.fillCircle(12,12,11);
+    // 테두리 (하늘색)
+    g.lineStyle(2, 0x5dade2, 0.8); g.strokeCircle(12,12,11);
+    // 반짝임 하이라이트
+    pxr(6,5,4,2,0xffffff); pxr(7,7,2,2,0xffffff);
+    g.generateTexture('bubble_bullet', 24, 24);
+
+    // ══════════════════════════════════════════════
+    // 투사체: 태양계 행성 - 훌라후프/orbit (20x20)
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 행성 본체 (주황)
+    pxr(2,2,16,16,0xe67e22);
+    pxr(0,5,20,10,0xe67e22);
+    pxr(5,0,10,20,0xe67e22);
+    // 행성 링 (연주황 테두리)
+    g.lineStyle(2, 0xf39c12); g.strokeCircle(10,10,9);
+    // 행성 무늬
+    pxr(4,8,12,2,0xd35400); pxr(6,12,8,2,0xd35400);
+    // 반짝임
+    pxr(4,4,3,2,0xfad7a0);
+    g.generateTexture('orbit_bullet', 20, 20);
+
+    // ══════════════════════════════════════════════
+    // 안전 횡단보도 풀 (80x80) - 연두색 단색 배경 (실제 "안전" 글자는 스폰 시 별도 텍스트로 표시)
+    // ══════════════════════════════════════════════
+    g.clear();
+    pxr(0,0,80,80,0x8ee686);
+    g.lineStyle(3, 0x27ae60, 0.9);
+    g.strokeRect(2, 2, 76, 76);
+    g.generateTexture('crosswalk_pool', 80, 80);
+
+    // ══════════════════════════════════════════════
+    // 물청소 풀 (70x70) - 파란 물걸레 자국
+    // ══════════════════════════════════════════════
+    g.clear();
+    pxr(0, 0, 70, 70, 0x5dade2);
+    g.fillStyle(0xffffff, 0.25); g.fillRect(0, 0, 70, 70);
+    // 반짝이는 비눗방울 자국
+    pxr(10, 10, 6, 6, 0xffffff); pxr(45, 20, 5, 5, 0xffffff);
+    pxr(25, 45, 6, 6, 0xffffff); pxr(55, 50, 5, 5, 0xffffff);
+    g.generateTexture('mop_pool', 70, 70);
+
+    // ══════════════════════════════════════════════
+    // 투사체: 종이비행기 (20x10)
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 흰 종이비행기 몸통
+    pxr(0,5,20,2,0xffffff);
+    pxr(0,5,20,4,0xecf0f1);
+    // 날개 위
+    g.fillStyle(0xffffff); g.fillTriangle(0,5,16,0,16,5);
+    // 날개 아래
+    g.fillStyle(0xbdc3c7); g.fillTriangle(0,7,16,10,16,7);
+    // 접힌 선 (회색)
+    pxr(5,4,10,1,0x95a5a6);
+    g.generateTexture('airplane_bullet', 20, 10);
+
+    // ══════════════════════════════════════════════
+    // 투사체: 물방울 (18x18)
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 물방울 형태 (아래 넓고 위 뾰족)
+    g.fillStyle(0x3498db, 0.85);
+    g.fillCircle(9,11,7);
+    g.fillTriangle(5,10,13,10,9,1);
+    // 반짝임
+    pxr(5,7,3,2,0xaed6f1);
+    g.generateTexture('water_bullet', 18, 18);
+
+    // ══════════════════════════════════════════════
+    // 투사체: 도서관 책 (22x14)
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 책 표지 (갈색)
+    pxr(0,0,22,14,0x7d6608);
+    // 책 내지 (베이지)
+    pxr(3,1,16,12,0xfef9e7);
+    // 책 줄
+    pxr(3,4,16,1,0xaab7b8); pxr(3,7,16,1,0xaab7b8); pxr(3,10,16,1,0xaab7b8);
+    // 책등 (진갈색)
+    pxr(0,0,3,14,0x5d4037);
+    g.generateTexture('library_bullet', 22, 14);
+
+    // ══════════════════════════════════════════════
+    // 투사체: 청소 파동 (120x20)
+    // ══════════════════════════════════════════════
+    g.clear();
+    g.fillStyle(0x1abc9c, 0.5); g.fillRect(0,0,120,20);
+    // 거품 느낌 (흰 원들)
+    g.fillStyle(0xffffff, 0.6); g.fillCircle(10,10,5); g.fillCircle(30,6,4); g.fillCircle(50,12,5); g.fillCircle(70,7,3); g.fillCircle(90,11,4); g.fillCircle(110,8,5);
+    g.generateTexture('cleanroom_wave', 120, 20);
+
+    // ══════════════════════════════════════════════
+    // 투사체: 수채화 물감 장판 (36x36)
+    // ══════════════════════════════════════════════
+    g.clear();
+    g.fillStyle(0xe74c3c, 0.7); g.fillCircle(14,14,14);
+    g.fillStyle(0xf39c12, 0.7); g.fillCircle(22,14,10);
+    g.fillStyle(0x3498db, 0.7); g.fillCircle(18,24,10);
+    g.fillStyle(0x9b59b6, 0.4); g.fillCircle(18,18,8);
+    g.generateTexture('paint_pool', 36, 36);
+
+    // ══════════════════════════════════════════════
+    // 투사체: 수학 공식 번개 - 지그재그 (14x32)
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 번개 지그재그 모양
+    g.fillStyle(0xf1c40f);
+    g.fillTriangle(7,0, 14,12, 8,12);
+    g.fillTriangle(6,12, 14,12, 0,28);
+    g.fillTriangle(0,28, 14,28, 7,32);
+    // 빛남 효과 (흰색 코어)
+    g.fillStyle(0xffffff, 0.8);
+    g.fillTriangle(8,2, 13,11, 9,11);
+    g.generateTexture('math_bolt', 14, 32);
+
+    // ══════════════════════════════════════════════
+    // 투사체: 훌라후프 링 (32x32)
+    // ══════════════════════════════════════════════
+    g.clear();
+    g.lineStyle(4, 0xff69b4); // 분홍색 두꺼운 테두리
+    g.strokeCircle(16, 16, 14);
+    g.lineStyle(1, 0x2ecc71); // 초록색 얇은 무늬
+    g.strokeCircle(16, 16, 15);
+    g.generateTexture('hula_ring', 32, 32);
+
+    // ══════════════════════════════════════════════
+    // 투사체: 분필 던지기 (12x4)
+    // ══════════════════════════════════════════════
+    g.clear();
+    pxr(0, 0, 10, 4, 0xffffff); // 흰색 분필 몸통
+    pxr(10, 1, 2, 2, 0xecf0f1); // 분필 끝부분
+    g.generateTexture('chalk_bullet', 12, 4);
+
+    // ══════════════════════════════════════════════
+    // 투사체: 줄넘기 채찍 (80x16)
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 줄넘기 줄 (지그재그/물결 무늬 느낌 - 단순 라인으로 변경)
+    g.lineStyle(3, 0xffffff); // 스프라이트 생성 시 흰색으로 만들어두고(그래야 setTint가 예쁘게 먹음) 나중에 파란색으로 Tint 처리
+    g.beginPath();
+    g.moveTo(0, 8);
+    g.lineTo(16, 4);
+    g.lineTo(32, 8);
+    g.lineTo(48, 12);
+    g.lineTo(64, 8);
+    g.lineTo(80, 4);
+    g.strokePath();
+    g.generateTexture('jumprope_whip', 80, 16);
+
+    // ══════════════════════════════════════════════
+    // 투사체: 과학실 알코올램프 불꽃 (24x24)
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 불꽃 바깥쪽 (빨강)
+    g.fillStyle(0xe74c3c, 0.8);
+    g.fillCircle(12, 14, 10);
+    g.fillTriangle(2, 14, 22, 14, 12, 2);
+    // 불꽃 안쪽 (주황)
+    g.fillStyle(0xf39c12, 0.9);
+    g.fillCircle(12, 16, 6);
+    g.fillTriangle(6, 16, 18, 16, 12, 6);
+    // 불꽃 심지어 안 (노랑)
+    g.fillStyle(0xf1c40f);
+    g.fillCircle(12, 18, 3);
+    g.generateTexture('alcohol_fire', 24, 24);
+
+    // ══════════════════════════════════════════════
+    // 경험치 보석 (12x12)
+    // ══════════════════════════════════════════════
+    g.clear();
+    g.fillStyle(0x27ae60); g.fillRect(2,0,8,12);
+    g.fillStyle(0x2ecc71); g.fillRect(0,3,12,6);
+    g.fillStyle(0x58d68d); g.fillRect(2,0,4,6);
+    g.lineStyle(1,0x1a8a45); g.strokeRect(2,0,8,12); g.strokeRect(0,3,12,6);
+    g.generateTexture('exp', 12, 12);
+
+    // ══════════════════════════════════════════════
+    // 반창고 아이템 (22x18)
+    // ══════════════════════════════════════════════
+    g.clear();
+    pxr(0,4,22,10,0xe67e22);
+    pxr(7,0,8,18,0xe67e22);
+    pxr(7,4,8,10,0xfad7a0);
+    pxr(10,1,2,16,0xffffff); pxr(7,7,8,4,0xffffff);
+    g.generateTexture('bandaid', 22, 18);
+
+    // ══════════════════════════════════════════════
+    // 보물상자 (32x26)
+    // ══════════════════════════════════════════════
+    g.clear();
+    pxr(0,8,32,18,0x935116);
+    pxr(0,0,32,10,0x7d6608);
+    g.lineStyle(2,0x4d3a0a); g.strokeRect(0,0,32,26);
+    pxr(0,8,32,2,0x4d3a0a);
+    pxr(14,5,4,5,0xf1c40f);
+    pxr(13,6,6,3,0xf1c40f);
+    // 빛나는 금빛 테두리
+    g.lineStyle(1,0xf39c12); g.strokeRect(2,10,28,14);
+    g.generateTexture('chest', 32, 26);
+
+    // ══════════════════════════════════════════════
+    // 골드 동전 (12x12)
+    // ══════════════════════════════════════════════
+    g.clear();
+    g.fillStyle(0xf1c40f); g.fillCircle(6,6,6);
+    g.fillStyle(0xd4ac0d); g.fillCircle(6,7,5);
+    g.fillStyle(0xf9e79f); g.fillRect(4,2,4,2);
+    pxr(5,4,2,4,0xd4ac0d);
+    g.generateTexture('gold_coin', 12, 12);
+
+    // ══════════════════════════════════════════════
+    // 1회성: 자석 아이템 (22x22)
+    // ══════════════════════════════════════════════
+    g.clear();
+    // U자형 자석
+    pxr(2,2,6,14,0xe74c3c);
+    pxr(14,2,6,14,0x3498db);
+    pxr(2,14,18,5,0x7f8c8d);
+    pxr(2,2,18,4,0x7f8c8d);
+    // 자석 극 색상
+    pxr(2,2,6,4,0xe74c3c); pxr(14,2,6,4,0x3498db);
+    // N/S 표시 픽셀
+    pxr(4,3,2,1,0xffffff); pxr(14,3,2,1,0xffffff);
+    g.generateTexture('magnet_item', 22, 22);
+
+    // ══════════════════════════════════════════════
+    // 1회성: 폭탄 아이템 (24x26)
+    // ══════════════════════════════════════════════
+    g.clear();
+    g.fillStyle(0x2c3e50); g.fillCircle(12,16,10);
+    g.fillStyle(0x1a1a1a); g.fillCircle(12,16,10);
+    g.fillStyle(0x4a4a4a); g.fillRect(4,10,5,5);
+    // 도화선
+    pxr(11,3,2,7,0x8b4513);
+    pxr(9,1,4,3,0x8b4513); pxr(7,0,4,2,0x8b4513);
+    // 불꽃
+    g.fillStyle(0xff6b35); g.fillCircle(8,0,3);
+    g.fillStyle(0xf1c40f); g.fillCircle(9,0,2);
+    g.generateTexture('bomb_item', 24, 26);
+
+    // ══════════════════════════════════════════════
+    // 칭찬 스티커 아이템 (22x22) - 노란 별 모양
+    // ══════════════════════════════════════════════
+    g.clear();
+    {
+      const cx = 11, cy = 11, outerR = 10, innerR = 4.2;
+      const starPts = [];
+      for (let i = 0; i < 10; i++) {
+        const r = (i % 2 === 0) ? outerR : innerR;
+        const a = (Math.PI / 5) * i - Math.PI / 2;
+        starPts.push({ x: cx + r * Math.cos(a), y: cy + r * Math.sin(a) });
+      }
+      g.fillStyle(0xf1c40f);
+      g.fillPoints(starPts, true);
+      g.fillStyle(0xffffff, 0.5);
+      g.fillCircle(cx, cy - 2, 2.5);
+    }
+    g.generateTexture('sticker_item', 22, 22);
+
+    // ══════════════════════════════════════════════
+    // 바닥 타일: 교실 바닥 (64x64) - 눈에 편안한 단색 계열
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 기본 밝은 베이지 (크림색) - 눈에 부담 없는 단일 톤
+    pxr(0, 0, 64, 64, 0xf0e8d8);
+    // 아주 연한 판자 구분선만 (색 차이 최소화)
+    pxr(0, 31, 64, 2, 0xe0d4c0);
+    pxr(31, 0, 2, 64, 0xe0d4c0);
+    g.generateTexture('bg_tile', 64, 64);
+
+    // ══════════════════════════════════════════════
+    // 책상 장애물 (40x36) - 나무 책상 위에서 본 모습
+    // ══════════════════════════════════════════════
+    g.clear();
+    // 책상 상판 (연갈색)
+    pxr(0,0,40,28,0xc8a96e);
+    // 상판 테두리 (어두운 갈색)
+    g.lineStyle(2, 0x7d5a32); g.strokeRect(0,0,40,28);
+    // 책상 다리 (어두운 갈색)
+    pxr(2,28,6,8,0x7d5a32); pxr(32,28,6,8,0x7d5a32);
+    // 책 한 권 올려두기 (파랑)
+    pxr(8,4,14,10,0x2471a3);
+    pxr(8,4,2,10,0x1a5276);
+    // 책 줄
+    pxr(12,6,8,1,0xaed6f1); pxr(12,8,8,1,0xaed6f1); pxr(12,10,8,1,0xaed6f1);
+    // 연필 (노랑)
+    pxr(26,6,10,3,0xf1c40f);
+    pxr(26,6,2,3,0xfad7a0); pxr(34,6,2,3,0xe74c3c);
+    g.generateTexture('obstacle_desk', 40, 36);
+
+    // ══════════════════════════════════════════════
+    // 투사체: 축구공 (22x22) - 하양+검정 패치
+    // ══════════════════════════════════════════════
+    g.clear();
+    g.fillStyle(0xffffff); g.fillCircle(11, 11, 11);
+    pxr(9,3,4,4,0x1a1a1a);
+    pxr(3,9,4,4,0x1a1a1a);
+    pxr(15,9,4,4,0x1a1a1a);
+    pxr(9,15,4,4,0x1a1a1a);
+    pxr(9,9,4,4,0x1a1a1a);
+    g.lineStyle(1, 0xbdc3c7); g.strokeCircle(11, 11, 11);
+    g.generateTexture('soccer_ball', 22, 22);
+
+    // ══════════════════════════════════════════════
+    // 투사체: 딱지 (28x28) - 접힌 종이 딱지(빨강/파랑)
+    // ══════════════════════════════════════════════
+    g.clear();
+    pxr(0, 0, 28, 28, 0xe74c3c);
+    g.fillStyle(0x2980b9);
+    g.fillTriangle(28, 0, 28, 28, 0, 28);
+    g.lineStyle(2, 0xffffff);
+    g.beginPath(); g.moveTo(0, 0); g.lineTo(28, 28); g.strokePath();
+    g.lineStyle(2, 0x2c3e50); g.strokeRect(0, 0, 28, 28);
+    g.generateTexture('ddakji_bullet', 28, 28);
+
+    // ══════════════════════════════════════════════
+    // 이펙트: 수업 종 (20x20) - 황동색 종 모양
+    // ══════════════════════════════════════════════
+    g.clear();
+    pxr(8, 0, 4, 3, 0xf1c40f);
+    pxr(6, 3, 8, 3, 0xf39c12);
+    pxr(4, 6, 12, 6, 0xf39c12);
+    pxr(3, 12, 14, 3, 0xd68910);
+    pxr(2, 15, 16, 2, 0xb9770e);
+    pxr(9, 17, 2, 3, 0x784212);
+    pxr(7, 5, 3, 2, 0xf8c471);
+    g.generateTexture('bell_gfx', 20, 20);
+
+    // 텍스처 생성에만 쓰인 임시 그래픽 객체는 더 이상 필요 없으므로 해제
+    g.destroy();
+  }
+  create() { this.scene.start('TitleScene'); }
+}
+
+class TitleScene extends Phaser.Scene {
+  constructor() { super('TitleScene'); }
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+    
+    // 데이터 로드
+    let gold = parseInt(localStorage.getItem('gold')) || 0;
+    let upgHp = parseInt(localStorage.getItem('upgHp')) || 0;
+    let upgSpeed = parseInt(localStorage.getItem('upgSpeed')) || 0;
+    let upgExp = parseInt(localStorage.getItem('upgExp')) || 0;
+    let upgMagnet = parseInt(localStorage.getItem('upgMagnet')) || 0;
+    let upgStartItem = parseInt(localStorage.getItem('upgStartItem')) || 0;
+    let charScholarUnlocked = localStorage.getItem('charScholarUnlocked') === '1';
+    
+    let selectedChar = 0;
+    const chars = [
+      { name: '전교 회장', desc: '경험치 획득 범위 30% 넓음\n무기: 바른말 고운말', tex: 'player', weapon: 'praise' },
+      { name: '장난꾸러기', desc: '이동속도 20% 빠름, 체력 20 낮음\n무기: 종이 비행기', tex: 'player_2', weapon: 'airplane' },
+      { name: '운동선수', desc: '최대 체력 30 높음, 크리티컬 증가\n무기: 축구 수업', tex: 'player_3', weapon: 'soccer' },
+      { name: '음악가', desc: '모든 무기 쿨타임 10% 추가 감소\n무기: 리코더 연주', tex: 'player_4', weapon: 'recorder' },
+      { name: '미술부원', desc: '장판형 무기(웅덩이·안전지대 등) 범위 20% 증가\n무기: 수채화 그리기', tex: 'player_5', weapon: 'paint' },
+      { name: '모범생', desc: '경험치 획득량 20% 증가\n무기: 도서관 책 소나기 + 바른말 고운말', tex: 'player_6', weapon: ['library', 'praise'], locked: !charScholarUnlocked, cost: 10000, unlockKey: 'charScholarUnlocked' }
+    ];
+
+    this.add.text(width/2, 80, '학교 서바이벌', { fontSize: '56px', fontStyle: 'bold', color: '#fff', stroke: '#34495e', strokeThickness: 8 }).setOrigin(0.5);
+    
+    const goldText = this.add.text(width - 50, 50, `보유 골드: ${gold} 🪙`, { fontSize: '28px', color: '#f1c40f', fontStyle: 'bold' }).setOrigin(1, 0);
+
+    // 상점 UI
+    this.add.rectangle(width/2 - 300, 370, 440, 460, 0x2c3e50, 0.8).setOrigin(0.5).setStrokeStyle(4, 0x34495e);
+    this.add.text(width/2 - 300, 180, '[ 영구 업그레이드 상점 ]', { fontSize: '28px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+    
+    const costs = [10, 100, 500, 1000, 2000];
+    const itemCosts = [3000, 10000]; // 선행학습 가격 인상
+    
+    const drawUpgrade = (y, label, level, maxLevel, costArr, key) => {
+      this.add.text(width/2 - 480, y, `${label} (Lv.${level}/${maxLevel})`, { fontSize: '20px', color: '#ecf0f1' });
+      if (level < maxLevel) {
+        let cost = costArr[level];
+        let btn = this.add.text(width/2 - 160, y, `${cost}G 구매`, { fontSize: '18px', backgroundColor: '#e67e22', padding: {x:10,y:5}, borderRadius:5 }).setInteractive({useHandCursor:true});
+        btn.on('pointerdown', () => {
+          if(gold >= cost) {
+            gold -= cost; localStorage.setItem('gold', gold);
+            localStorage.setItem(key, level + 1);
+            this.scene.restart();
+          }
+        });
+      } else {
+        this.add.text(width/2 - 160, y, `MAX`, { fontSize: '18px', color: '#2ecc71', fontStyle: 'bold' });
+      }
+    };
+    
+    drawUpgrade(240, '체력 단련 (+HP)', upgHp, 5, costs, 'upgHp');
+    drawUpgrade(310, '달리기 연습 (+이속)', upgSpeed, 5, costs, 'upgSpeed');
+    drawUpgrade(380, '매점 VIP (+경험치)', upgExp, 5, costs, 'upgExp');
+    drawUpgrade(450, '자력 증가 (+아이템)', upgMagnet, 5, costs, 'upgMagnet');
+    drawUpgrade(520, '선행 학습 (+시작아이템)', upgStartItem, 2, itemCosts, 'upgStartItem');
+
+    // 캐릭터 선택 UI
+    this.add.rectangle(width/2 + 300, 370, 440, 460, 0x2c3e50, 0.8).setOrigin(0.5).setStrokeStyle(4, 0x34495e);
+    this.add.text(width/2 + 300, 170, '[ 캐릭터 선택 ]', { fontSize: '28px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+    
+    const charName = this.add.text(width/2 + 300, 240, chars[0].name, { fontSize: '32px', color: '#3498db', fontStyle: 'bold' }).setOrigin(0.5);
+    const charDesc = this.add.text(width/2 + 300, 310, chars[0].desc, { fontSize: '20px', color: '#ecf0f1', align: 'center', wordWrap: { width: 350 }, lineSpacing: 8 }).setOrigin(0.5);
+    
+    const charColors = ['#3498db', '#e74c3c', '#2ecc71', '#9b59b6', '#e67e22', '#16a085'];
+    const updateChar = () => {
+      const c = chars[selectedChar];
+      charName.setText(c.name);
+      charName.setColor(charColors[selectedChar] || '#ffffff');
+      charDesc.setText(c.desc);
+
+      if (c.locked) {
+        startBtn.setVisible(false);
+        buyCharBtn.setVisible(true);
+        buyCharBtn.setText(`🔒 ${c.name} 잠금 해제 (${c.cost}G)`);
+        buyCharBtn.setBackgroundColor(gold >= c.cost ? '#e67e22' : '#7f8c8d');
+      } else {
+        startBtn.setVisible(true);
+        buyCharBtn.setVisible(false);
+      }
+    };
+
+    const prevBtn = this.add.text(width/2 + 130, 240, '◀', { fontSize: '30px', color: '#fff' }).setOrigin(0.5).setInteractive({useHandCursor:true});
+    const nextBtn = this.add.text(width/2 + 470, 240, '▶', { fontSize: '30px', color: '#fff' }).setOrigin(0.5).setInteractive({useHandCursor:true});
+    prevBtn.on('pointerdown', () => { selectedChar = (selectedChar - 1 + chars.length) % chars.length; updateChar(); });
+    nextBtn.on('pointerdown', () => { selectedChar = (selectedChar + 1) % chars.length; updateChar(); });
+
+    // 1회성 상점 UI
+    this.add.text(width/2 + 300, 395, '[ 1회성 아이템 (이번 판만 적용) ]', { fontSize: '21px', color: '#f1c40f', fontStyle: 'bold' }).setOrigin(0.5);
+    this.add.text(width/2 + 300, 425, '(Z: 자석  /  X: 폭탄 사용)', { fontSize: '16px', color: '#bdc3c7' }).setOrigin(0.5);
+    
+    let oneTimeBomb = false;
+    let oneTimeMagnet = false;
+    let oneTimeStartItem = false;
+    
+    const drawOneTime = (y, label, cost, onBuy) => {
+      let purchased = false;
+      let statusText = this.add.text(width/2 + 455, y, `대기`, { fontSize: '16px', color: '#95a5a6' }).setOrigin(0, 0.5);
+      let btn = this.add.text(width/2 + 130, y, `${cost}G`, { fontSize: '17px', backgroundColor: '#8e44ad', padding: {x:8,y:4} }).setOrigin(0, 0.5).setInteractive({useHandCursor:true});
+      this.add.text(width/2 + 200, y, label, { fontSize: '18px', color: '#ecf0f1' }).setOrigin(0, 0.5);
+      
+      btn.on('pointerdown', () => {
+        if(gold >= cost && !purchased) {
+          purchased = true;
+          gold -= cost; localStorage.setItem('gold', gold);
+          goldText.setText(`보유 골드: ${gold} 🪙`);
+          statusText.setText('✓ 장착'); statusText.setColor('#2ecc71');
+          btn.setBackgroundColor('#7f8c8d');
+          onBuy();
+        }
+      });
+    };
+    
+    drawOneTime(460, '💣 싹쓸이 폭탄', 50, () => { oneTimeBomb = true; });
+    drawOneTime(500, '🧲 강력 자석', 30, () => { oneTimeMagnet = true; });
+    drawOneTime(540, '📖 선행 학습 +1', 500, () => { oneTimeStartItem = true; });
+
+    // 시작 버튼
+    const startBtn = this.add.text(width/2, 650, '▶ 등교하기 (게임 시작)', { fontSize: '36px', color: '#ffffff', backgroundColor: '#2ecc71', padding: { x: 40, y: 15 }, borderRadius: 10 }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    startBtn.on('pointerdown', () => this.scene.start('GameScene', { 
+      character: chars[selectedChar], 
+      upgHp: upgHp, upgSpeed: upgSpeed, upgExp: upgExp, upgMagnet: upgMagnet, upgStartItem: upgStartItem,
+      oneTimeBomb: oneTimeBomb, oneTimeMagnet: oneTimeMagnet, oneTimeStartItem: oneTimeStartItem
+    }));
+
+    // 잠긴 캐릭터(모범생 등) 영구 구매 버튼 - 시작 버튼과 같은 자리에 겹쳐두고 잠금 여부에 따라 표시 전환
+    const buyCharBtn = this.add.text(width/2, 650, '🔒 잠금 해제', { fontSize: '32px', color: '#ffffff', backgroundColor: '#7f8c8d', padding: { x: 40, y: 15 }, borderRadius: 10 }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setVisible(false);
+    buyCharBtn.on('pointerdown', () => {
+      const c = chars[selectedChar];
+      if (c.locked && gold >= c.cost) {
+        gold -= c.cost;
+        localStorage.setItem('gold', gold);
+        localStorage.setItem(c.unlockKey, '1');
+        this.scene.restart();
+      }
+    });
+  }
+}
+
+class GameClearScene extends Phaser.Scene {
+  constructor() { super('GameClearScene'); }
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+    
+    this.add.rectangle(0, 0, width, height, 0x000000, 0.85).setOrigin(0);
+    this.add.text(width/2, height/2 - 100, '🎊 방과후 시간! (30분 생존 성공) 🎊', { fontSize: '48px', fill: '#f1c40f', fontStyle: 'bold' }).setOrigin(0.5);
+    
+    const continueBtn = this.add.text(width/2 - 150, height/2 + 50, '방과후 수업 (계속하기)', { fontSize: '28px', fill: '#fff', backgroundColor: '#2ecc71', padding: { x: 20, y: 15 }, borderRadius: 10 }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    continueBtn.on('pointerdown', () => {
+      this.scene.resume('GameScene');
+      this.scene.stop();
+    });
+    
+    const homeBtn = this.add.text(width/2 + 150, height/2 + 50, '하교하기 (메인화면)', { fontSize: '28px', fill: '#fff', backgroundColor: '#e74c3c', padding: { x: 20, y: 15 }, borderRadius: 10 }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    homeBtn.on('pointerdown', () => {
+      this.scene.stop('GameScene');
+      this.scene.stop('UIScene');
+      this.scene.start('TitleScene');
+    });
+  }
+}
+
+class GameScene extends Phaser.Scene {
+  constructor() { super('GameScene'); }
+  
+  init(data) {
+    if (!data) data = {};
+    this.selectedChar = data.character || { name: '전교 회장', tex: 'player', weapon: 'praise' };
+    this.upgHp = data.upgHp || 0;
+    this.upgSpeed = data.upgSpeed || 0;
+    this.upgExp = data.upgExp || 0;
+    this.upgMagnet = data.upgMagnet || 0;
+    this.upgStartItem = data.upgStartItem || 0;
+    this.oneTimeBomb = data.oneTimeBomb || false;
+    this.oneTimeMagnet = data.oneTimeMagnet || false;
+    this.oneTimeStartItem = data.oneTimeStartItem || false;
+  }
+
+  create() {
+    this.cameras.main.setBackgroundColor('#ecf0f1');
+    const bg = this.add.tileSprite(0, 0, 4000, 4000, 'bg_tile').setOrigin(0);
+
+    this.player = this.physics.add.sprite(2000, 2000, this.selectedChar.tex);
+    this.player.setCollideWorldBounds(true);
+    this.player.lastDirX = 1;
+    this.player.lastDirY = 0;
+    
+    this.registry.set('level', 1);
+    this.registry.set('exp', 0);
+    this.registry.set('maxExp', 15);
+    this.registry.set('hp', 100 + (this.upgHp * 15));
+    this.registry.set('maxHp', 100 + (this.upgHp * 15));
+    this.registry.set('time', 0);
+    this.registry.set('kills', 0); 
+    this.gameTime = 0;
+    this.lastBossTime = 0; // 종합평가(5분마다) 스폰 타이밍
+    this.lastUnitBossTime = 0; // 단원평가(60초마다) 스폰 타이밍
+    this.lastHomeworkBossTime = 0; // 방학숙제(최종보스, 15분마다) 스폰 타이밍
+    this.finalBossActive = false; // 종합평가 또는 방학숙제가 활동 중인 동안 단원평가 스폰 억제용
+    this.homeworkBossActive = false; // 방학숙제가 활동 중인 동안 종합평가 스폰 억제용
+    this.lastNoticeCheckTime = 0; // 알림장 검사 이벤트 트리거용
+    this.playerInDust = false; // 미세먼지 구름 근접 여부 (매 프레임 갱신)
+    this.prevInDust = false;
+
+    this.skills = {};
+    Object.keys(SKILL_DATA).forEach(k => this.skills[k] = 0);
+    const starterWeapons = Array.isArray(this.selectedChar.weapon) ? this.selectedChar.weapon : [this.selectedChar.weapon];
+    starterWeapons.forEach(w => { this.skills[w] = 1; });
+    
+    // 선행 학습: 영구 upgStartItem + 1회성 oneTimeStartItem 합산
+    const totalStartItems = this.upgStartItem + (this.oneTimeStartItem ? 1 : 0);
+    if (totalStartItems > 0) {
+      let activeKeys = Object.keys(SKILL_DATA).filter(k => SKILL_DATA[k].type === 'active' && !starterWeapons.includes(k));
+      Phaser.Utils.Array.Shuffle(activeKeys);
+      for(let i=0; i<totalStartItems; i++) {
+        if (activeKeys[i]) this.skills[activeKeys[i]] = 1;
+      }
+    }
+
+    this.weaponTimers = {};
+    this.stats = {};
+    this.recalculateStats();
+
+    this.enemies = this.physics.add.group({ classType: Phaser.Physics.Arcade.Sprite, maxSize: 300 });
+    this.projectiles = this.physics.add.group({ classType: Phaser.Physics.Arcade.Sprite, maxSize: 500 });
+    this.exps = this.physics.add.group({ classType: Phaser.Physics.Arcade.Sprite, maxSize: 400 });
+    this.pools = this.physics.add.group({ classType: Phaser.Physics.Arcade.Sprite, maxSize: 100 });
+    this.items = this.physics.add.group({ classType: Phaser.Physics.Arcade.Sprite, maxSize: 50 });
+
+    // 소모품 슬롯 (맵에 스폰 대신 키 입력 방식으로 사용)
+    this.consumables = { bomb: this.oneTimeBomb, magnet: this.oneTimeMagnet };
+    
+    this.obstacles = this.physics.add.staticGroup();
+    for(let i=0; i<50; i++) {
+      let ox = Phaser.Math.Between(100, 3900);
+      let oy = Phaser.Math.Between(100, 3900);
+      if (Phaser.Math.Distance.Between(2000, 2000, ox, oy) > 500) {
+        this.obstacles.create(ox, oy, 'obstacle_desk');
+      }
+    }
+
+    this.recorderAura = this.add.circle(this.player.x, this.player.y, 100, 0x8e44ad, 0.3);
+    this.physics.add.existing(this.recorderAura);
+    this.recorderAura.body.setCircle(100);
+    this.recorderAura.setVisible(false);
+
+    this.spawnDelay = 1000;
+    this.spawnTimerEvent = this.time.addEvent({ delay: this.spawnDelay, callback: this.spawnEnemy, callbackScope: this, loop: true });
+    
+    this.weaponTimers = {};
+    this.updateWeaponTimers();
+    this.time.addEvent({ delay: 1000, callback: this.regenHp, callbackScope: this, loop: true });
+
+    this.physics.add.collider(this.player, this.obstacles);
+    this.physics.add.collider(this.enemies, this.obstacles);
+
+    this.physics.add.overlap(this.projectiles, this.enemies, this.hitEnemyWithProjectile, null, this);
+    this.physics.add.overlap(this.player, this.enemies, this.hurtPlayer, null, this);
+    this.physics.add.overlap(this.player, this.exps, this.collectExp, null, this);
+    this.physics.add.overlap(this.player, this.items, this.collectItem, null, this);
+
+    this.physics.world.setBounds(0, 0, 4000, 4000);
+    this.cameras.main.setBounds(0, 0, 4000, 4000);
+    this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.wasd = this.input.keyboard.addKeys({ up: 87, down: 83, left: 65, right: 68 });
+    
+    // 소모품 단축키 등록
+    this.keyZ = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.Z);
+    this.keyX = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.X);
+    
+    this.orbitAngle = 0;
+
+    // ── 바운스 애니메이션 (걷기 상하 흔들림)
+    // originY를 tween하여 카메라 흔들림 없이 시각적 바운스 효과 구현
+    this.player.setOrigin(0.5, 0.5);
+    this._bounceTween = this.tweens.add({
+      targets: this.player,
+      originY: { from: 0.5, to: 0.6 },
+      duration: 180,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.easeInOut',
+      paused: true
+    });
+    this._isMoving = false;
+    
+    this.scene.launch('UIScene');
+  }
+
+  updateWeaponTimers() {
+    for (let key in this.weaponTimers) this.weaponTimers[key].remove();
+    const cd = this.stats.cooldownMult;
+
+    if (this.skills.praise > 0)    this.weaponTimers.praise    = this.time.addEvent({ delay: (this.skills.praise >= 6    ? 150  : Math.max(200,  1000 - this.skills.praise * 100))  * cd, callback: this.firePraise,    callbackScope: this, loop: true });
+    if (this.skills.bubble > 0)    this.weaponTimers.bubble    = this.time.addEvent({ delay: (this.skills.bubble >= 6    ? 300  : Math.max(500,  2500 - this.skills.bubble * 300))  * cd, callback: this.fireBubble,    callbackScope: this, loop: true });
+    if (this.skills.crosswalk > 0) this.weaponTimers.crosswalk = this.time.addEvent({ delay: (this.skills.crosswalk >= 6 ? 400  : Math.max(800,  3000 - this.skills.crosswalk * 400)) * cd, callback: this.fireCrosswalk, callbackScope: this, loop: true });
+    if (this.skills.airplane > 0)  this.weaponTimers.airplane  = this.time.addEvent({ delay: (this.skills.airplane >= 6  ? 300  : Math.max(800,  2000 - this.skills.airplane * 200))  * cd, callback: this.fireAirplane,  callbackScope: this, loop: true });
+    if (this.skills.idea > 0)      this.weaponTimers.idea      = this.time.addEvent({ delay: (this.skills.idea >= 6      ? 500  : Math.max(1000, 3000 - this.skills.idea * 400))      * cd, callback: this.fireIdea,      callbackScope: this, loop: true });
+    if (this.skills.water > 0)     this.weaponTimers.water     = this.time.addEvent({ delay: (this.skills.water >= 6     ? 500  : Math.max(1000, 3000 - this.skills.water * 300))     * cd, callback: this.fireWater,     callbackScope: this, loop: true });
+    if (this.skills.library > 0)   this.weaponTimers.library   = this.time.addEvent({ delay: (this.skills.library >= 6   ? 400  : Math.max(600,  2500 - this.skills.library * 300))   * cd, callback: this.fireLibrary,   callbackScope: this, loop: true });
+    if (this.skills.cleanroom > 0) this.weaponTimers.cleanroom = this.time.addEvent({ delay: (this.skills.cleanroom >= 6 ? 500  : Math.max(800,  3000 - this.skills.cleanroom * 350)) * cd, callback: this.fireCleanroom, callbackScope: this, loop: true });
+    if (this.skills.paint > 0)     this.weaponTimers.paint     = this.time.addEvent({ delay: (this.skills.paint >= 6     ? 600  : Math.max(1000, 3500 - this.skills.paint * 400))     * cd, callback: this.firePaint,     callbackScope: this, loop: true });
+    if (this.skills.math > 0)      this.weaponTimers.math      = this.time.addEvent({ delay: (this.skills.math >= 6      ? 300  : Math.max(500,  2000 - this.skills.math * 250))      * cd, callback: this.fireMath,      callbackScope: this, loop: true });
+    if (this.skills.hula > 0)      this.weaponTimers.hula      = this.time.addEvent({ delay: (this.skills.hula >= 6      ? 800  : Math.max(1200, 4000 - this.skills.hula * 400))     * cd, callback: this.fireHula,      callbackScope: this, loop: true });
+    if (this.skills.chalk > 0)     this.weaponTimers.chalk     = this.time.addEvent({ delay: (this.skills.chalk >= 6     ? 150  : Math.max(300,  1500 - this.skills.chalk * 200))     * cd, callback: this.fireChalk,     callbackScope: this, loop: true });
+    if (this.skills.jumprope > 0)  this.weaponTimers.jumprope  = this.time.addEvent({ delay: (this.skills.jumprope >= 6  ? 300  : Math.max(450,  1250 - this.skills.jumprope * 150))  * cd, callback: this.fireJumprope,  callbackScope: this, loop: true });
+    if (this.skills.alcohol > 0)   this.weaponTimers.alcohol   = this.time.addEvent({ delay: (this.skills.alcohol >= 6   ? 400  : Math.max(700,  3000 - this.skills.alcohol * 350))   * cd, callback: this.fireAlcohol,   callbackScope: this, loop: true });
+    if (this.skills.bell > 0)      this.weaponTimers.bell      = this.time.addEvent({ delay: (this.skills.bell >= 6      ? 4000 : Math.max(5000, 9000 - this.skills.bell * 800))      * cd, callback: this.fireBell,      callbackScope: this, loop: true });
+    if (this.skills.soccer > 0)    this.weaponTimers.soccer    = this.time.addEvent({ delay: (this.skills.soccer >= 6    ? 350  : Math.max(600,  2200 - this.skills.soccer * 250))    * cd, callback: this.fireSoccer,    callbackScope: this, loop: true });
+    if (this.skills.ddakji > 0)    this.weaponTimers.ddakji    = this.time.addEvent({ delay: (this.skills.ddakji >= 6    ? 500  : Math.max(700,  2600 - this.skills.ddakji * 350))    * cd, callback: this.fireDdakji,    callbackScope: this, loop: true });
+    if (this.skills.mop > 0)       this.weaponTimers.mop       = this.time.addEvent({ delay: (this.skills.mop >= 6       ? 500  : Math.max(900,  3200 - this.skills.mop * 350))     * cd, callback: this.fireMop,       callbackScope: this, loop: true });
+    // 칭찬 스티커판: 공격 무기가 아니라 일정 주기로 필드에 스티커를 띄우는 패시브 (쿨타임 감소 영향은 받지 않음)
+    if (this.skills.sticker > 0)   this.weaponTimers.sticker   = this.time.addEvent({ delay: Math.max(8000, 25000 - this.skills.sticker * 2000), callback: this.spawnStickerItem, callbackScope: this, loop: true });
+  }
+
+  regenHp() {
+    if (this.stats.hpRegen > 0) {
+      let hp = this.registry.get('hp');
+      let maxHp = this.registry.get('maxHp');
+      if (hp < maxHp) this.registry.set('hp', Math.min(maxHp, hp + this.stats.hpRegen));
+    }
+  }
+
+  recalculateStats() {
+    this.stats.speedMult  = 1.0 + (this.skills.shoes * 0.15) + (this.upgSpeed * 0.1);
+    this.registry.set('maxHp', 100 + (this.skills.milk * 20) + (this.skills.lunchbox * 10) + (this.upgHp * 15));
+    this.stats.hpRegen    = this.skills.milk * 1 + this.skills.lunchbox * 0.5;
+    this.stats.sizeMult   = 1.0 + (this.skills.glasses * 0.15);
+    this.stats.cooldownMult = Math.max(0.1, (1.0 - (this.skills.watch * 0.1) - (this.skills.diary * 0.08)) * (this.selectedChar.name === '음악가' ? 0.9 : 1));
+    this.stats.magnetMult = 1.0 + (this.skills.magnet * 0.3) + (this.upgMagnet * 0.25);
+    this.stats.damageMult = 1.0 + (this.skills.power * 0.15) + (this.skills.pencilcase * 0.12);
+    this.stats.armor      = this.skills.book * 3;
+    this.stats.durationMult = 1.0 + (this.skills.hourglass * 0.25);
+    this.stats.amount     = this.skills.friend;
+    this.stats.expMult    = 1.0 + (this.skills.badge * 0.2) + (this.upgExp * 0.15) + (this.selectedChar.name === '모범생' ? 0.2 : 0);
+    this.stats.crit       = this.skills.clover * 0.1 + (this.selectedChar.name === '운동선수' ? 0.2 : 0);
+    this.stats.projSpeed  = 1.0 + (this.skills.fan * 0.2);
+    this.stats.poolRadiusMult = 1.0 + (this.selectedChar.name === '미술부원' ? 0.2 : 0);
+    this.updateWeaponTimers();
+  }
+
+  getClosestEnemy() {
+    let closest = null, minD = Infinity;
+    this.enemies.getChildren().forEach(e => {
+      if (e.active) {
+        let d = Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y);
+        if (d < minD) { minD = d; closest = e; }
+      }
+    });
+    return closest;
+  }
+
+  // 특정 좌표 기준으로 가장 가까운 방해꾼 찾기 (exclude로 지정한 대상은 제외) - 축구공 튕기기용
+  getClosestEnemyFrom(x, y, exclude) {
+    let closest = null, minD = Infinity;
+    this.enemies.getChildren().forEach(e => {
+      if (e.active && e !== exclude) {
+        let d = Phaser.Math.Distance.Between(x, y, e.x, e.y);
+        if (d < minD) { minD = d; closest = e; }
+      }
+    });
+    return closest;
+  }
+
+  calculateDamage(base) {
+    let dmg = base * this.stats.damageMult;
+    if (Math.random() < this.stats.crit) dmg *= 2; 
+    return dmg;
+  }
+
+  firePraise() {
+    const isEvo = this.skills.praise >= 6;
+    let count = (isEvo ? 3 : 1) + this.stats.amount;
+    const words = ['사랑', '감사', '배려', '친절'];
+    for(let i=0; i<count; i++) {
+      this.time.delayedCall(i * 50, () => {
+        let e = this.getClosestEnemy();
+        if(!e) return;
+        
+        // 텍스트 투사체 생성
+        const word = Phaser.Utils.Array.GetRandom(words);
+        const color = isEvo ? '#f1c40f' : '#ffffff';
+        const txt = this.add.text(this.player.x, this.player.y, word, { 
+          fontSize: (20 * this.stats.sizeMult * (isEvo ? 1.5 : 1)) + 'px', 
+          fontStyle: 'bold', fill: color, stroke: '#000', strokeThickness: 3 
+        }).setOrigin(0.5);
+        
+        this.physics.add.existing(txt);
+        this.projectiles.add(txt);
+        
+        txt.body.setCircle(10); // 대략적인 충돌 영역
+        txt.weaponType = 'praise'; 
+        txt.damage = this.calculateDamage(10 + this.skills.praise * 5) * (isEvo ? 3 : 1); 
+        txt.pierce = isEvo ? 999 : 0; 
+        
+        this.physics.moveToObject(txt, e, 500 * this.stats.projSpeed * (isEvo ? 1.5 : 1));
+        txt.deathTime = this.time.now + 1500 * this.stats.durationMult;
+      });
+    }
+  }
+
+  fireBubble() {
+    const isEvo = this.skills.bubble >= 6;
+    const count = (isEvo ? 3 : 1) + this.stats.amount;
+    for(let i=0; i<count; i++) {
+      const proj = this.projectiles.get();
+      if (proj) {
+        proj.enableBody(true, this.player.x, this.player.y, true, true);
+        proj.setTexture('bubble_bullet').setScale(this.stats.sizeMult * (isEvo ? 3 : 1));
+        if(isEvo) proj.setAlpha(0.6).setTint(0xff00ff);
+        else proj.setAlpha(1).clearTint();
+        proj.weaponType = 'bubble'; proj.damage = this.calculateDamage(15 + this.skills.bubble * 8) * (isEvo ? 4 : 1); proj.pierce = isEvo ? 999 : (3 + this.skills.bubble); 
+        const angle = Phaser.Math.Between(0, 360) * Math.PI / 180;
+        proj.setVelocity(Math.cos(angle) * 80 * this.stats.projSpeed, Math.sin(angle) * 80 * this.stats.projSpeed);
+        proj.deathTime = this.time.now + 5000 * this.stats.durationMult;
+      }
+    }
+  }
+
+  fireCrosswalk() {
+    const isEvo = this.skills.crosswalk >= 6;
+    const count = (isEvo ? 2 : 1) + this.stats.amount;
+    for(let i=0; i<count; i++) {
+      const pool = this.pools.get();
+      if (pool) {
+        const rx = this.player.x + Phaser.Math.Between(-200, 200);
+        const ry = this.player.y + Phaser.Math.Between(-200, 200);
+        pool.enableBody(true, rx, ry, true, true);
+        pool.setTexture('crosswalk_pool');
+        const scale = this.stats.sizeMult * (isEvo ? 2.5 : 1);
+        pool.setScale(scale).setAlpha(0.6);
+        if(isEvo) pool.setTint(0xffd700);
+        else pool.clearTint();
+        pool.damage = this.calculateDamage(5 + this.skills.crosswalk * 3) * (isEvo ? 3 : 1);
+        pool.deathTime = this.time.now + (3000 + this.skills.crosswalk * 500) * this.stats.durationMult * (isEvo ? 3 : 1);
+
+        // "안전" 텍스트 라벨을 풀과 같은 위치/수명으로 부착
+        if (pool.safetyLabel) { pool.safetyLabel.destroy(); pool.safetyLabel = null; }
+        const label = this.add.text(rx, ry, '안전', { fontSize: '20px', color: '#1e6b3a', fontStyle: 'bold' }).setOrigin(0.5);
+        label.setScale(scale);
+        label.setAlpha(0.85);
+        pool.safetyLabel = label;
+      }
+    }
+  }
+
+  // ─── 🪣 물청소: 슬로우 없이 순수 지속 피해를 주는 물걸레 자국 ────────────────
+  fireMop() {
+    const isEvo = this.skills.mop >= 6;
+    const count = (isEvo ? 3 : 1) + this.stats.amount;
+    const scale = this.stats.sizeMult * (isEvo ? 2.2 : 1.3) * (1 + this.skills.mop * 0.1);
+
+    for (let i = 0; i < count; i++) {
+      const pool = this.pools.get();
+      if (!pool) continue;
+      const rx = this.player.x + Phaser.Math.Between(-220, 220);
+      const ry = this.player.y + Phaser.Math.Between(-220, 220);
+      pool.enableBody(true, rx, ry, true, true);
+      pool.setTexture('mop_pool').setScale(scale).setAlpha(0.7);
+      if (isEvo) pool.setTint(0x00e5ff); else pool.clearTint();
+      pool.damage = this.calculateDamage(6 + this.skills.mop * 4) * (isEvo ? 3 : 1);
+      pool.deathTime = this.time.now + (2800 + this.skills.mop * 400) * this.stats.durationMult * (isEvo ? 2 : 1);
+    }
+  }
+
+  fireAirplane() {
+    const isEvo = this.skills.airplane >= 6;
+    const count = (isEvo ? 5 : 1) + this.stats.amount;
+    let closest = this.getClosestEnemy();
+    let baseAngle = closest ? Phaser.Math.Angle.Between(this.player.x, this.player.y, closest.x, closest.y) : 0;
+    
+    for(let i=0; i<count; i++) {
+      const proj = this.projectiles.get();
+      if (proj) {
+        proj.enableBody(true, this.player.x, this.player.y, true, true);
+        proj.setTexture('airplane_bullet').setScale(this.stats.sizeMult * (isEvo ? 1.5 : 1));
+        if(isEvo) proj.setTint(0xffaa00);
+        else proj.clearTint();
+        proj.weaponType = 'airplane'; 
+        proj.damage = this.calculateDamage(15 + this.skills.airplane * 5) * (isEvo ? 3 : 1); 
+        proj.pierce = isEvo ? 999 : (3 + this.skills.airplane);
+        
+        let angle = baseAngle + (i - Math.floor(count/2)) * 0.15; 
+        proj.rotation = angle;
+        proj.setVelocity(Math.cos(angle) * 500 * this.stats.projSpeed * (isEvo ? 1.5 : 1), Math.sin(angle) * 500 * this.stats.projSpeed * (isEvo ? 1.5 : 1));
+
+        proj.deathTime = this.time.now + 3000 * this.stats.durationMult;
+      }
+    }
+  }
+
+  fireIdea() {
+    const isEvo = this.skills.idea >= 6;
+    const count = (isEvo ? 8 : (1 + Math.floor(this.skills.idea / 2))) + this.stats.amount;
+    let activeEnemies = this.enemies.getChildren().filter(e => e.active);
+    Phaser.Utils.Array.Shuffle(activeEnemies);
+    
+    for(let i=0; i<Math.min(count, activeEnemies.length); i++) {
+        let e = activeEnemies[i];
+        e.hp -= this.calculateDamage(20 + this.skills.idea * 10) * (isEvo ? 4 : 1);
+        this.flashEnemy(e);
+        
+        let flash = this.add.circle(e.x, e.y, 40 * this.stats.sizeMult * (isEvo ? 2 : 1), 0xf1c40f, 0.8);
+        this.tweens.add({ targets: flash, alpha: 0, duration: 300, onComplete: () => flash.destroy() });
+        this.checkEnemyDeath(e);
+    }
+  }
+
+  fireWater() {
+    const isEvo = this.skills.water >= 6;
+    // 레벨업 시 발사되는 물방울 갯수 증가 (레벨당 2개씩 추가)
+    const count = (isEvo ? 8 : 2 + (this.skills.water * 2)) + this.stats.amount;
+    for(let i=0; i<count; i++) {
+      const proj = this.projectiles.get();
+      if (proj) {
+        proj.enableBody(true, this.player.x, this.player.y, true, true);
+        proj.setTexture('water_bullet').setScale(this.stats.sizeMult * (isEvo ? 2 : 1));
+        if(isEvo) proj.setTint(0x00ffff);
+        else proj.clearTint();
+        // 레벨업 시 데미지 큰 폭으로 증가
+        proj.weaponType = 'water'; proj.damage = this.calculateDamage(8 + this.skills.water * 8) * (isEvo ? 3 : 1); proj.pierce = 999;
+        
+        proj.setDrag(400); 
+        const angle = Phaser.Math.Between(0, 360) * Math.PI / 180;
+        proj.setVelocity(Math.cos(angle) * 500 * this.stats.projSpeed * (isEvo ? 1.5 : 1), Math.sin(angle) * 500 * this.stats.projSpeed * (isEvo ? 1.5 : 1));
+        proj.deathTime = this.time.now + 3000 * this.stats.durationMult * (isEvo ? 2 : 1);
+      }
+    }
+  }
+
+  // ─── 📚 도서관 책 소나기: 8방향으로 책 발사 ───────────────────────────
+  fireLibrary() {
+    const isEvo = this.skills.library >= 6;
+    const dirs = isEvo ? 12 : 8;
+    const count = 1 + this.stats.amount;
+    for (let r = 0; r < count; r++) {
+      for (let i = 0; i < dirs; i++) {
+        const proj = this.projectiles.get();
+        if (!proj) continue;
+        proj.enableBody(true, this.player.x, this.player.y, true, true);
+        proj.setTexture('library_bullet').setScale(this.stats.sizeMult * (isEvo ? 1.8 : 1));
+        if (isEvo) proj.setTint(0xffd700); else proj.clearTint();
+        proj.weaponType = 'library'; proj.damage = this.calculateDamage(12 + this.skills.library * 5) * (isEvo ? 3 : 1);
+        proj.pierce = isEvo ? 999 : (2 + this.skills.library);
+        const angle = (Math.PI * 2 / dirs) * i;
+        proj.setVelocity(Math.cos(angle) * 380 * this.stats.projSpeed, Math.sin(angle) * 380 * this.stats.projSpeed);
+        proj.deathTime = this.time.now + 1500 * this.stats.durationMult;
+      }
+    }
+  }
+
+  // ─── 🧹 청소하기: 4방향 파동 ────────────────────────────────────
+  fireCleanroom() {
+    const isEvo = this.skills.cleanroom >= 6;
+    const waves = isEvo ? 4 : 2;
+    const damage = this.calculateDamage(10 + this.skills.cleanroom * 6) * (isEvo ? 3 : 1);
+    const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+    for (let d = 0; d < waves * (isEvo ? 2 : 1); d++) {
+      const proj = this.projectiles.get();
+      if (!proj) continue;
+      proj.enableBody(true, this.player.x, this.player.y, true, true);
+      proj.setTexture('cleanroom_wave').setScale(this.stats.sizeMult * (isEvo ? 2 : 1));
+      if (isEvo) proj.setTint(0x00eeff); else proj.clearTint();
+      proj.setAlpha(0.75);
+      proj.weaponType = 'cleanroom'; proj.damage = damage; proj.pierce = 999;
+      const dir = dirs[d % 4];
+      const speed = 200 * this.stats.projSpeed;
+      proj.setVelocity(dir[0] * speed, dir[1] * speed);
+      proj.deathTime = this.time.now + 1000 * this.stats.durationMult;
+    }
+  }
+
+  // ─── ⭕ 훌라후프 날리기: 직선 관통 ────────────────────
+  fireHula() {
+    const isEvo = this.skills.hula >= 6;
+    const count = (isEvo ? 3 : 1) + this.stats.amount;
+    for (let i = 0; i < count; i++) {
+      const proj = this.projectiles.get();
+      if (!proj) continue;
+      proj.enableBody(true, this.player.x, this.player.y, true, true);
+      proj.setTexture('hula_ring').setScale(this.stats.sizeMult * (isEvo ? 2.5 : 1.5));
+      if (isEvo) proj.setTint(0xffd700); else proj.clearTint();
+      
+      proj.weaponType = 'hula'; 
+      proj.damage = this.calculateDamage(15 + this.skills.hula * 5) * (isEvo ? 3 : 1); 
+      proj.pierce = 999; 
+      
+      // 랜덤 방향이나 가까운 적 방향으로 발사
+      let target = this.getClosestEnemy();
+      let angle = Phaser.Math.Between(0, 360) * Math.PI / 180;
+      if (target && Math.random() > 0.3) { // 70% 확률로 가까운 적 조준
+        angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, target.x, target.y);
+      }
+      
+      // 여러 개 발사 시 부채꼴로 퍼지게
+      angle += (i - Math.floor(count/2)) * 0.2; 
+      
+      proj.setVelocity(Math.cos(angle) * 450 * this.stats.projSpeed, Math.sin(angle) * 450 * this.stats.projSpeed);
+      // 계속 돌아가는 효과 (회전)
+      proj.setAngularVelocity(400); 
+      proj.deathTime = this.time.now + 2500 * this.stats.durationMult;
+    }
+  }
+
+  // ─── 🖍️ 집중의 시선: 플레이어가 바라보는 방향으로 발사 (단검) ────────────────
+  fireChalk() {
+    const isEvo = this.skills.chalk >= 6;
+    // 레벨1에서 1발, 레벨2에서 2발... 레벨5에서 5발, 진화시 8발
+    const count = (isEvo ? 8 : this.skills.chalk);
+    
+    // 마지막으로 이동했던 방향(상하좌우/대각선 8방향)을 사용
+    const baseAngle = Math.atan2(this.player.lastDirY, this.player.lastDirX);
+
+    for (let i = 0; i < count; i++) {
+      this.time.delayedCall(i * 100, () => {
+        const proj = this.projectiles.get();
+        if (!proj) return;
+        proj.enableBody(true, this.player.x, this.player.y, true, true);
+        proj.setTexture('chalk_bullet').setScale(this.stats.sizeMult * (isEvo ? 2 : 1.2));
+        proj.setTint(0xff0000);
+        
+        proj.weaponType = 'chalk'; 
+        proj.damage = this.calculateDamage(15 + this.skills.chalk * 10) * (isEvo ? 3 : 1); 
+        proj.pierce = isEvo ? (1 + this.skills.chalk) : 0; 
+        
+        // 날아가는 각도 (조금씩 산탄)
+        const spread = (Math.random() - 0.5) * 0.2;
+        const angle = baseAngle + spread;
+        
+        proj.setRotation(angle);
+        proj.setVelocity(Math.cos(angle) * 700 * this.stats.projSpeed, Math.sin(angle) * 700 * this.stats.projSpeed);
+        proj.deathTime = this.time.now + 1500 * this.stats.durationMult;
+      });
+    }
+  }
+
+  // ─── 〰️ 안전거리 유지: 전방 가로로 넓게 휘두름 (채찍) ────────────────
+  fireJumprope() {
+    const isEvo = this.skills.jumprope >= 6;
+    const count = (isEvo ? 4 : 2) + Math.floor(this.skills.jumprope / 2) + this.stats.amount; 
+    
+    // 채찍은 항상 좌우로만 휘두릅니다.
+    let dirX = this.player.lastDirX !== undefined && this.player.lastDirX !== 0 ? (this.player.lastDirX < 0 ? -1 : 1) : (this.player.flipX ? -1 : 1);
+    
+    for (let i = 0; i < count; i++) {
+      this.time.delayedCall(i * 150, () => {
+        const proj = this.projectiles.get();
+        if (!proj) return;
+        
+        const scaleX = this.stats.sizeMult * 6 * 0.7 * (isEvo ? 1.5 : 1);
+        const scaleY = this.stats.sizeMult * 6 * 0.5 * (isEvo ? 1.5 : 1);
+        
+        const offsetX = (80 * scaleX) / 2;
+        
+        // 캐릭터의 좌/우에 스폰
+        proj.enableBody(true, this.player.x + (dirX * offsetX), this.player.y, true, true);
+        
+        proj.setTexture('jumprope_whip');
+        proj.setScale(scaleX, scaleY);
+        
+        // 가로로만 공격하므로 회전값은 0
+        proj.setRotation(0);
+        proj.setFlipX(dirX < 0);
+        proj.setFlipY(false);
+        
+        proj.setTint(isEvo ? 0x9b59b6 : 0x3498db); 
+        
+        proj.weaponType = 'jumprope'; 
+        proj.damage = (this.calculateDamage(2.5 + (this.skills.jumprope * 1.5)) * (isEvo ? 2 : 1)) / 2; 
+        proj.pierce = 999; 
+        
+        proj.setVelocity(0, 0); 
+        proj.deathTime = this.time.now + 100 * this.stats.durationMult; 
+      });
+    }
+  }
+
+  // ─── 🔥 과학실 알코올램프: 불꽃 발사 및 지속 피해 (불의 지팡이) ────────────────
+  fireAlcohol() {
+    const isEvo = this.skills.alcohol >= 6;
+    const count = (isEvo ? 4 : 1) + this.stats.amount;
+    
+    for (let i = 0; i < count; i++) {
+      this.time.delayedCall(i * 150, () => {
+        let e = this.getClosestEnemy();
+        // 적이 없으면 랜덤 방향
+        let angle = e ? Phaser.Math.Angle.Between(this.player.x, this.player.y, e.x, e.y) : Phaser.Math.Between(0, 360) * Math.PI / 180;
+        
+        const proj = this.projectiles.get();
+        if (!proj) return;
+        proj.enableBody(true, this.player.x, this.player.y, true, true);
+        proj.setTexture('alcohol_fire').setScale(this.stats.sizeMult * (isEvo ? 2 : 1.2));
+        
+        proj.weaponType = 'alcohol'; 
+        proj.damage = this.calculateDamage(12 + this.skills.alcohol * 5) * (isEvo ? 3 : 1); 
+        proj.pierce = isEvo ? 999 : 2 + this.skills.alcohol; 
+        
+        proj.setVelocity(Math.cos(angle) * 350 * this.stats.projSpeed, Math.sin(angle) * 350 * this.stats.projSpeed);
+        proj.deathTime = this.time.now + 2000 * this.stats.durationMult;
+        
+        // 회전하며 날아가게
+        proj.setAngularVelocity(200);
+      });
+    }
+  }
+
+  // ─── 🔔 수업 종: 화면 전체 방해꾼 일시 정지 + 피해 ────────────────
+  fireBell() {
+    const isEvo = this.skills.bell >= 6;
+    const freezeDuration = isEvo ? 2500 : 1000 + this.skills.bell * 200;
+    const dmg = this.calculateDamage(8 + this.skills.bell * 4) * (isEvo ? 3 : 1);
+
+    this.enemies.getChildren().forEach(enemy => {
+      if (enemy.active) {
+        enemy.hp -= dmg;
+        enemy.frozenUntil = this.time.now + freezeDuration;
+        this.flashEnemy(enemy);
+        this.checkEnemyDeath(enemy);
+      }
+    });
+
+    // 종 이펙트: 종 아이콘이 살짝 흔들리다 사라짐
+    const bell = this.add.image(this.player.x, this.player.y - 40, 'bell_gfx').setScale(isEvo ? 2 : 1.4);
+    if (isEvo) bell.setTint(0xffd700);
+    this.tweens.add({ targets: bell, angle: { from: -20, to: 20 }, duration: 100, yoyo: true, repeat: 4 });
+    this.tweens.add({ targets: bell, alpha: 0, y: bell.y - 20, duration: 700, delay: 300, onComplete: () => bell.destroy() });
+
+    // 종소리 퍼짐 이펙트 (링)
+    const ring = this.add.circle(this.player.x, this.player.y, 20, 0xf1c40f, 0);
+    ring.setStrokeStyle(6, isEvo ? 0xffd700 : 0xf1c40f, 0.9);
+    this.tweens.add({ targets: ring, radius: 500, alpha: 0, duration: 600, onComplete: () => ring.destroy() });
+  }
+
+  // ─── ⚽ 축구 수업: 가까운 방해꾼에게 축구공 슛 ────────────────
+  fireSoccer() {
+    const isEvo = this.skills.soccer >= 6;
+    const count = (isEvo ? 3 : 1) + this.stats.amount;
+
+    for (let i = 0; i < count; i++) {
+      this.time.delayedCall(i * 120, () => {
+        let target = this.getClosestEnemy();
+        let angle = target ? Phaser.Math.Angle.Between(this.player.x, this.player.y, target.x, target.y) : Phaser.Math.Between(0, 360) * Math.PI / 180;
+
+        const proj = this.projectiles.get();
+        if (!proj) return;
+        proj.enableBody(true, this.player.x, this.player.y, true, true);
+        proj.setTexture('soccer_ball').setScale(this.stats.sizeMult * (isEvo ? 1.8 : 1.2));
+        if (isEvo) proj.setTint(0xffd700); else proj.clearTint();
+
+        proj.weaponType = 'soccer';
+        proj.damage = this.calculateDamage(18 + this.skills.soccer * 7) * (isEvo ? 3 : 1);
+        proj.pierce = isEvo ? 999 : 4 + this.skills.soccer;
+
+        // 진화 전: 관통 대신 방해꾼 사이에서 최대 2번 튕김 / 진화 후(월드컵 슛): 기존처럼 관통
+        proj.isEvo = isEvo;
+        proj.bounceCount = 0;
+        proj.maxBounces = 2;
+        const soccerSpeed = 550 * this.stats.projSpeed;
+        proj.soccerSpeed = soccerSpeed;
+
+        proj.setVelocity(Math.cos(angle) * soccerSpeed, Math.sin(angle) * soccerSpeed);
+        proj.deathTime = this.time.now + 2000 * this.stats.durationMult;
+
+        // 회전하며 날아가게
+        proj.setAngularVelocity(500);
+      });
+    }
+  }
+
+  // ─── 🎯 딱지치기: 사거리 안의 몬스터 중 랜덤 1명에게 강한 한 방 + 넉백 ────────────────
+  fireDdakji() {
+    const isEvo = this.skills.ddakji >= 6;
+    const count = (isEvo ? 3 : 1) + Math.floor(this.stats.amount / 2);
+    // 공격 범위(사거리) - 좁은 대신 데미지를 강하게 넣는 컨셉이라 범위 자체는 넓히지 않음
+    const range = 180 * this.stats.sizeMult;
+
+    for (let i = 0; i < count; i++) {
+      this.time.delayedCall(i * 200, () => {
+        // 사거리 안에 있는 몬스터들 중 랜덤으로 1명 선택해서 그 자리를 공격
+        const inRange = this.enemies.getChildren().filter(e => e.active && Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) <= range);
+        let targetX, targetY;
+        if (inRange.length > 0) {
+          const target = Phaser.Utils.Array.GetRandom(inRange);
+          targetX = target.x;
+          targetY = target.y;
+        } else {
+          // 사거리 안에 몬스터가 없으면 기존처럼 바라보는 방향으로 헛스윙
+          const dirX = this.player.lastDirX !== undefined && this.player.lastDirX !== 0 ? (this.player.lastDirX < 0 ? -1 : 1) : (this.player.flipX ? -1 : 1);
+          const dirY = this.player.lastDirY || 0;
+          targetX = this.player.x + dirX * range * 0.6;
+          targetY = this.player.y + dirY * range * 0.6;
+        }
+
+        const proj = this.projectiles.get();
+        if (!proj) return;
+        const scale = this.stats.sizeMult * (isEvo ? 2.2 : 1.5);
+
+        proj.enableBody(true, targetX, targetY, true, true);
+        proj.setTexture('ddakji_bullet').setScale(scale);
+        if (isEvo) proj.setTint(0xffd700); else proj.clearTint();
+
+        proj.weaponType = 'ddakji';
+        // 사거리가 좁은 만큼 데미지를 크게 강화 (기존 대비 약 2배)
+        proj.damage = this.calculateDamage(70 + this.skills.ddakji * 30) * (isEvo ? 3 : 1);
+        proj.pierce = 999;
+
+        proj.setVelocity(0, 0);
+        proj.deathTime = this.time.now + 200 * this.stats.durationMult;
+      });
+    }
+  }
+
+  // ─── 🎨 수채화 그리기: 슬로우 장판 ────────────────────────────────
+  firePaint() {
+    const isEvo = this.skills.paint >= 6;
+    const count = (isEvo ? 4 : 1) + this.stats.amount;
+    // 레벨업 시 크기가 증가하도록 scale multiplier 추가
+    const paintScale = this.stats.sizeMult * (isEvo ? 3 : 1.5) * (1 + (this.skills.paint * 0.15));
+    
+    for (let i = 0; i < count; i++) {
+      const pool = this.pools.get();
+      if (!pool) continue;
+      const rx = this.player.x + Phaser.Math.Between(-250, 250);
+      const ry = this.player.y + Phaser.Math.Between(-250, 250);
+      pool.enableBody(true, rx, ry, true, true);
+      pool.setTexture('paint_pool').setScale(paintScale).setAlpha(0.75);
+      pool.setTint(isEvo ? 0xff00ff : [0xe74c3c, 0x3498db, 0x2ecc71, 0xf1c40f][i % 4]);
+      pool.damage = this.calculateDamage(5 + this.skills.paint * 3) * (isEvo ? 3 : 1);
+      pool.isPaintPool = true; // 슬로우 효과 태그
+      pool.deathTime = this.time.now + (2500 + this.skills.paint * 400) * this.stats.durationMult * (isEvo ? 2 : 1);
+    }
+  }
+
+  // ─── ⚡ 수학 공식 번개: 연쇄 번개 ────────────────────────────────────
+  fireMath() {
+    const isEvo = this.skills.math >= 6;
+    const chains = isEvo ? 8 : (2 + this.skills.math);
+    const dmg = this.calculateDamage(25 + this.skills.math * 12) * (isEvo ? 4 : 1);
+    let enemies = this.enemies.getChildren().filter(e => e.active);
+    if (enemies.length === 0) return;
+    Phaser.Utils.Array.Shuffle(enemies);
+    let hit = new Set();
+    let cur = enemies[0];
+    for (let c = 0; c < chains && cur; c++) {
+      if (hit.has(cur)) break;
+      hit.add(cur);
+      cur.hp -= dmg; this.flashEnemy(cur);
+      let flash = this.add.graphics();
+      flash.lineStyle(isEvo ? 6 : 3, isEvo ? 0xffd700 : 0xf1c40f, 1);
+      flash.strokeCircle(cur.x, cur.y, 30 * this.stats.sizeMult);
+      this.tweens.add({ targets: flash, alpha: 0, duration: 300, onComplete: () => flash.destroy() });
+      this.checkEnemyDeath(cur);
+      // 연쇄: 주변 300px 이내 아직 안 맞은 적 찾기
+      let next = null, minD = 300;
+      enemies.forEach(e => {
+        if (!hit.has(e) && e.active) {
+          const d = Phaser.Math.Distance.Between(cur.x, cur.y, e.x, e.y);
+          if (d < minD) { minD = d; next = e; }
+        }
+      });
+      cur = next;
+    }
+  }
+
+  spawnEnemy() {
+    const time = this.registry.get('time');
+    const level = this.registry.get('level');
+    // 후반부로 갈수록 한번에 튀어나오는 몬스터 수가 폭발적으로 증가 (최대 12마리씩)
+    const count = Math.min(12, 1 + Math.floor(time / 150));
+    
+    for (let i = 0; i < count; i++) {
+      const enemy = this.enemies.get();
+      if (enemy) {
+        const angle = Phaser.Math.Between(0, 360);
+        const radius = 800;
+        const x = this.player.x + radius * Math.cos(angle * Math.PI/180);
+        const y = this.player.y + radius * Math.sin(angle * Math.PI/180);
+        
+        enemy.enableBody(true, x, y, true, true);
+        enemy.clearTint();
+        enemy.enemyType = 'normal';
+        enemy.isDashing = false;
+
+        const rand = Math.random();
+      
+      if (time > 30 && rand < 0.15) {
+        enemy.setTexture('enemy_fast');
+        enemy.hp = 5 + Math.floor(level * 1.5);
+        enemy.speed = 50 + Math.min(25, Math.floor(time / 10)); // 원거리 몹 속도 절반으로 하향
+        enemy.enemyType = 'smartphone';
+        enemy.lastShoot = this.time.now;
+      } else if (time > 45 && rand >= 0.15 && rand < 0.25) {
+        enemy.setTexture('enemy_bomb');
+        enemy.hp = 15 + Math.floor(level * 4) + Math.floor(time / 6);
+        enemy.speed = 45 + Math.min(20, Math.floor(time / 12));
+        enemy.enemyType = 'bomb';
+      } else if (time > 50 && rand >= 0.25 && rand < 0.33) {
+        enemy.setTexture('enemy_dust');
+        enemy.hp = 40 + Math.floor(level * 10) + Math.floor(time * 1.5); // 스모그라 다소 튼튼하게
+        enemy.speed = 30 + Math.min(15, Math.floor(time / 15)); // 매우 느리게 부유
+        enemy.enemyType = 'dust';
+      } else if (time > 60 && rand > 0.85) {
+        enemy.setTexture('enemy_tank');
+        enemy.hp = 50 + Math.floor(level * 15) + Math.floor(time * 2);
+        enemy.speed = 40 + Math.min(30, Math.floor(time / 10));
+        enemy.enemyType = 'sleep';
+        enemy.lastDash = this.time.now;
+      } else {
+        enemy.setTexture('enemy');
+        enemy.hp = 10 + Math.floor(level * 3) + Math.floor(time / 5);
+        enemy.speed = 80 + Math.min(100, Math.floor(time / 5)); 
+      }
+      enemy.isBoss = false;
+      enemy.setScale(1.0);
+      }
+    }
+  }
+
+  spawnBoss() {
+    const enemy = this.enemies.get();
+    if (enemy) {
+      const angle = Phaser.Math.Between(0, 360);
+      const radius = 900;
+      const x = this.player.x + radius * Math.cos(angle * Math.PI/180);
+      const y = this.player.y + radius * Math.sin(angle * Math.PI/180);
+      
+      enemy.enableBody(true, x, y, true, true);
+      enemy.clearTint();
+      enemy.enemyType = 'boss_shooter'; // 종합평가: 탱커형 대신 탄막을 발사하는 공격형 보스
+
+      enemy.setTexture('enemy_boss');
+      const time = this.registry.get('time');
+      const level = this.registry.get('level');
+      
+      enemy.hp = 700 + (level * 40) + (time * 10); // 5분마다 등장하는 만큼 적당히 유지하되 탱커형보다는 낮춤
+      enemy.maxHp = enemy.hp; // 보스 체력바 표시용
+      enemy.speed = 50 + Math.min(30, Math.floor(time / 15)); // 거리를 유지하며 탄막을 쏘므로 이동은 다소 느리게
+      enemy.isBoss = true;
+      enemy.lastRingTime = this.time.now + 800; // 등장 직후 바로 쏟아지지 않도록 약간의 유예
+      enemy.lastSpreadTime = this.time.now + 2000;
+      enemy.setScale(2.5);
+      this.finalBossActive = true; // 종합평가가 살아있는 동안 단원평가 등장 억제
+
+      let warn = this.add.text(this.player.x, this.player.y - 150, '⚠️ 공포의 종합 평가가 탄막을 준비합니다! ⚠️', { fontSize: '32px', fill: '#e74c3c', fontStyle: 'bold', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5);
+      this.tweens.add({ targets: warn, alpha: 0, duration: 3000, onComplete: () => warn.destroy() });
+    }
+  }
+
+  spawnUnitTestBoss() {
+    // 단원평가: 60초마다 등장하는 탱커형 보스 (탄막 없이 맷집+돌진 위주)
+    const enemy = this.enemies.get();
+    if (enemy) {
+      const angle = Phaser.Math.Between(0, 360);
+      const radius = 900;
+      const x = this.player.x + radius * Math.cos(angle * Math.PI/180);
+      const y = this.player.y + radius * Math.sin(angle * Math.PI/180);
+
+      enemy.enableBody(true, x, y, true, true);
+      enemy.enemyType = 'boss_tank';
+
+      enemy.setTexture('enemy_boss');
+      enemy.setTint(0x95a5a6); // 종합평가(빨강 계열 없음)와 구분되는 회색 톤
+      const time = this.registry.get('time');
+      const level = this.registry.get('level');
+
+      enemy.hp = 550 + (level * 35) + (time * 9); // 탱커형답게 체력을 크게 상향 (기존 300+25*lv+6*t 대비 대폭 증가)
+      enemy.maxHp = enemy.hp; // 보스 체력바 표시용
+      enemy.speed = 70 + Math.min(50, Math.floor(time / 10));
+      enemy.isBoss = true;
+      enemy.isDashing = false;
+      enemy.lastDash = this.time.now + 1500; // 등장 직후 바로 돌진하지 않도록 약간의 유예
+      enemy.setScale(2.0);
+
+      let warn = this.add.text(this.player.x, this.player.y - 150, '⚠️ 든든한 단원 평가가 다가옵니다! ⚠️', { fontSize: '28px', fill: '#e67e22', fontStyle: 'bold', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5);
+      this.tweens.add({ targets: warn, alpha: 0, duration: 3000, onComplete: () => warn.destroy() });
+    }
+  }
+
+  spawnHomeworkBoss() {
+    // 방학숙제: 15분마다 등장하는 최종보스. 탄막(종합평가)+돌진(단원평가) 패턴을 모두 사용하며
+    // 체력이 50% 이하로 떨어지면 폭주(2페이즈)해서 더 자주, 더 강하게 공격합니다.
+    const enemy = this.enemies.get();
+    if (enemy) {
+      const angle = Phaser.Math.Between(0, 360);
+      const radius = 900;
+      const x = this.player.x + radius * Math.cos(angle * Math.PI/180);
+      const y = this.player.y + radius * Math.sin(angle * Math.PI/180);
+
+      enemy.enableBody(true, x, y, true, true);
+      enemy.enemyType = 'boss_final';
+
+      enemy.setTexture('enemy_boss');
+      enemy.setTint(0xf39c12); // 다른 두 보스와 구분되는 금빛 톤
+      const time = this.registry.get('time');
+      const level = this.registry.get('level');
+
+      enemy.hp = 3000 + (level * 80) + (time * 20); // 최종보스답게 압도적인 체력
+      enemy.maxHp = enemy.hp; // 보스 체력바 & 페이즈 전환 판정용
+      enemy.speed = 60 + Math.min(40, Math.floor(time / 15));
+      enemy.isBoss = true;
+      enemy.isDashing = false;
+      enemy.enrageAnnounced = false;
+      enemy.lastDash = this.time.now + 2500; // 등장 직후 유예
+      enemy.lastRingTime = this.time.now + 1200;
+      enemy.setScale(3.2);
+      this.finalBossActive = true; // 단원평가 스폰 억제
+      this.homeworkBossActive = true; // 종합평가 스폰 억제
+
+      let warn = this.add.text(this.player.x, this.player.y - 150, '🚨 산더미 방학숙제가 나타났습니다! 🚨', { fontSize: '34px', fill: '#f39c12', fontStyle: 'bold', stroke: '#000', strokeThickness: 6 }).setOrigin(0.5);
+      this.tweens.add({ targets: warn, alpha: 0, duration: 3500, onComplete: () => warn.destroy() });
+    }
+  }
+
+  // ─── 📓 알림장 검사: 초록 안전지대 밖에 있으면 도트 피해 (이동할 여유 시간을 충분히 줌) ────────────────
+  triggerNoticeCheck() {
+    const zoneRadius = 130;
+    const graceTime = 5000;   // 안전지대로 이동할 여유 시간 (충분히 길게)
+    const dangerTime = 6000;  // 위험 구간 지속 시간
+    const tickDamage = 8;
+
+    // 플레이어 근처지만 걸어서 이동할 만한 약간의 거리를 두고 안전지대 위치 선정
+    const angle = Phaser.Math.Between(0, 360) * Math.PI / 180;
+    const dist = Phaser.Math.Between(180, 260);
+    const zx = Phaser.Math.Clamp(this.player.x + Math.cos(angle) * dist, 150, 3850);
+    const zy = Phaser.Math.Clamp(this.player.y + Math.sin(angle) * dist, 150, 3850);
+
+    // 경고 문구
+    let warn = this.add.text(zx, zy - zoneRadius - 30, '📓 알림장 검사! 초록 안전지대로 이동하세요!', { fontSize: '22px', fill: '#2ecc71', fontStyle: 'bold', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5);
+    this.tweens.add({ targets: warn, alpha: 0, duration: 2000, delay: graceTime, onComplete: () => warn.destroy() });
+
+    // 안전지대 시각화 (초록 원, 점점 옅어지다가 사라짐)
+    const zone = this.add.circle(zx, zy, zoneRadius, 0x2ecc71, 0.25);
+    zone.setStrokeStyle(4, 0x2ecc71, 0.9);
+
+    // 여유 시간이 지난 뒤에만 위험 구간(도트 데미지) 시작
+    this.time.delayedCall(graceTime, () => {
+      const ticks = Math.floor(dangerTime / 1000);
+      this.time.addEvent({
+        delay: 1000,
+        repeat: ticks - 1,
+        callback: () => {
+          if (!this.player.active) return;
+          const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, zx, zy);
+          if (d > zoneRadius) {
+            const dmg = Math.max(1, tickDamage - this.stats.armor);
+            this.registry.set('hp', this.registry.get('hp') - dmg);
+            this.cameras.main.flash(150, 231, 76, 60);
+            if (this.registry.get('hp') <= 0) {
+              this.scene.stop('UIScene');
+              this.scene.start('GameOverScene');
+            }
+          }
+        }
+      });
+    });
+
+    // 위험 구간까지 모두 끝나면 안전지대 이펙트 정리
+    this.time.delayedCall(graceTime + dangerTime, () => {
+      this.tweens.add({ targets: zone, alpha: 0, duration: 500, onComplete: () => zone.destroy() });
+    });
+  }
+
+  flashEnemy(enemy) {
+    if (enemy.active) {
+      enemy.setTintFill(0xffffff);
+      this.time.delayedCall(100, () => { if (enemy.active) enemy.clearTint(); });
+    }
+  }
+
+  hitEnemyWithProjectile(proj, enemy) {
+    if (proj.active && enemy.active) {
+      if (enemy.enemyType === 'projectile') return; // 탄막(적의 총알류)은 파괴 불가능 - 피해야 함
+      if (!enemy.lastProjHit || this.time.now - enemy.lastProjHit > 200 || proj.weaponType === 'praise') {
+        enemy.hp -= proj.damage;
+        enemy.lastProjHit = this.time.now;
+        this.flashEnemy(enemy);
+        
+        // 비눗방울 슬로우 효과
+        if (proj.weaponType === 'bubble' && !enemy.isSlowed) {
+          enemy.isSlowed = true;
+          enemy.speed *= 0.5;
+          this.time.delayedCall(3000, () => {
+            if (enemy.active) {
+              enemy.speed *= 2;
+              enemy.isSlowed = false;
+            }
+          });
+        }
+        // 물감 슬로우 효과 (풀에서 발동) - pool overlap은 collectItem과 같은 overlap으로 처리되므로
+        if (proj.isPaintPool && !enemy.isSlowed) {
+          enemy.isSlowed = true;
+          enemy.speed *= 0.45;
+          this.time.delayedCall(2500, () => {
+            if (enemy.active) { enemy.speed /= 0.45; enemy.isSlowed = false; }
+          });
+        }
+        // 알코올램프 불꽃 화상(도트 데미지) 효과
+        if (proj.weaponType === 'alcohol' && !enemy.isBurned) {
+          enemy.isBurned = true;
+          let burnTicks = 3;
+          let burnEvent = this.time.addEvent({
+            delay: 500,
+            repeat: burnTicks - 1,
+            callback: () => {
+              if (enemy.active) {
+                enemy.hp -= proj.damage * 0.5; // 불꽃 데미지의 절반을 화상으로 줌
+                this.flashEnemy(enemy);
+                enemy.setTintFill(0xe74c3c); // 빨간색으로 깜빡임
+                this.time.delayedCall(100, () => { if (enemy.active) enemy.clearTint(); });
+                this.checkEnemyDeath(enemy);
+              }
+            }
+          });
+          this.time.delayedCall(1500, () => { if (enemy.active) enemy.isBurned = false; });
+        }
+        
+        // 안전거리 유지(jumprope) / 딱지치기(ddakji) 밀쳐내기 넉백 효과
+        if (proj.weaponType === 'jumprope' || proj.weaponType === 'ddakji') {
+          const kb = proj.weaponType === 'ddakji' ? 70 : 40;
+          enemy.x += Math.cos(Phaser.Math.Angle.Between(this.player.x, this.player.y, enemy.x, enemy.y)) * kb;
+          enemy.y += Math.sin(Phaser.Math.Angle.Between(this.player.x, this.player.y, enemy.x, enemy.y)) * kb;
+        }
+        
+        // ⚽ 축구공(비진화): 관통하지 않고 가장 가까운 다른 방해꾼 쪽으로 최대 2번 튕김
+        if (proj.weaponType === 'soccer' && !proj.isEvo) {
+          proj.bounceCount++;
+          if (proj.bounceCount > proj.maxBounces) {
+            proj.disableBody(true, true);
+          } else {
+            const nextTarget = this.getClosestEnemyFrom(proj.x, proj.y, enemy);
+            let newAngle;
+            if (nextTarget) {
+              newAngle = Phaser.Math.Angle.Between(proj.x, proj.y, nextTarget.x, nextTarget.y);
+            } else {
+              // 튕길 다른 방해꾼이 없으면 들어온 방향의 반대쪽(+약간의 랜덤)으로 튕겨나감
+              const incomingAngle = Math.atan2(proj.body.velocity.y, proj.body.velocity.x);
+              newAngle = incomingAngle + Math.PI + Phaser.Math.Between(-30, 30) * Math.PI / 180;
+            }
+            const speed = proj.soccerSpeed || 550;
+            proj.setVelocity(Math.cos(newAngle) * speed, Math.sin(newAngle) * speed);
+          }
+          this.checkEnemyDeath(enemy);
+          return;
+        }
+
+        const noPierceTypes = ['notice', 'bubble', 'water', 'orbit', 'cleanroom', 'library', 'jumprope', 'ddakji'];
+        if (!noPierceTypes.includes(proj.weaponType)) {
+          proj.pierce--;
+          if(proj.pierce < 0) {
+            if (proj.weaponType === 'praise') proj.destroy();
+            else proj.disableBody(true, true);
+          }
+        } else if (proj.weaponType === 'bubble' || proj.weaponType === 'water' || proj.weaponType === 'library') {
+          proj.pierce--;
+          if (proj.pierce <= 0) {
+            proj.disableBody(true, true);
+          }
+        }
+        this.checkEnemyDeath(enemy);
+      }
+    }
+  }
+
+  checkEnemyDeath(enemy) {
+    if (enemy.hp <= 0) {
+      const wasBomb = enemy.enemyType === 'bomb';
+      const bx = enemy.x, by = enemy.y;
+      enemy.disableBody(true, true);
+      this.registry.set('kills', this.registry.get('kills') + 1);
+
+      // 숙제 폭탄: 처치되는 순간 주변에 폭발 피해
+      if (wasBomb) {
+        this.explodeHomeworkBomb(bx, by, enemy);
+      }
+      
+      if (enemy.isBoss) {
+        enemy.isBoss = false;
+        const isFinalBoss = enemy.enemyType === 'boss_shooter'; // 종합평가(공격형) 여부
+        const isHomeworkBoss = enemy.enemyType === 'boss_final'; // 방학숙제(최종보스) 여부
+        if (isFinalBoss && !this.homeworkBossActive) this.finalBossActive = false; // 종합평가가 쓰러지면 단원평가가 다시 등장 가능 (방학숙제가 활동 중이면 계속 억제)
+        if (isHomeworkBoss) { this.finalBossActive = false; this.homeworkBossActive = false; } // 방학숙제가 쓰러지면 모든 억제 해제
+        const chestCount = isHomeworkBoss ? 4 : (isFinalBoss ? 2 : 1); // 방학숙제: 4개 / 종합평가: 2개 / 단원평가: 1개
+        for (let i = 0; i < chestCount; i++) {
+          const item = this.items.get();
+          if (item) {
+            item.enableBody(true, enemy.x + Phaser.Math.Between(-20, 20), enemy.y + Phaser.Math.Between(-20, 20), true, true);
+            item.setTexture('chest').setScale(2.0);
+            item.itemType = 'chest';
+          }
+        }
+      } else {
+        const exp = this.exps.get();
+        if (exp) {
+          exp.enableBody(true, enemy.x, enemy.y, true, true);
+          exp.setTexture('exp');
+        }
+        
+        let rand = Math.random();
+        // 용돈기입장(moneybook) 레벨당 골드 드랍 확률 +2%p (자석/폭탄 확률 폭은 그대로 유지)
+        const goldExtra = this.skills.moneybook * 0.02;
+        if (rand < 0.03) {
+          const item = this.items.get();
+          if (item) {
+            item.enableBody(true, enemy.x + Phaser.Math.Between(-15, 15), enemy.y + Phaser.Math.Between(-15, 15), true, true);
+            item.setTexture('bandaid').setScale(1.0);
+            item.itemType = 'bandaid';
+          }
+        } else if (rand < 0.15 + goldExtra) {
+          const item = this.items.get();
+          if (item) {
+            item.enableBody(true, enemy.x + Phaser.Math.Between(-15, 15), enemy.y + Phaser.Math.Between(-15, 15), true, true);
+            item.setTexture('gold_coin');
+            item.itemType = 'gold';
+          }
+        } else if (rand < 0.155 + goldExtra) {
+          const item = this.items.get();
+          if (item) {
+            item.enableBody(true, enemy.x, enemy.y, true, true);
+            item.setTexture('magnet_item');
+            item.itemType = 'magnet';
+          }
+        } else if (rand < 0.158 + goldExtra) {
+          const item = this.items.get();
+          if (item) {
+            item.enableBody(true, enemy.x, enemy.y, true, true);
+            item.setTexture('bomb_item');
+            item.itemType = 'bomb';
+          }
+        }
+      }
+    }
+  }
+
+  // ─── 💣 숙제 폭탄 폭발: 플레이어 스플래시 피해 + 주변 몬스터 연쇄 피해 + 이펙트 ────────────────
+  explodeHomeworkBomb(x, y, sourceEnemy) {
+    const blastRadius = 100;
+
+    // 플레이어가 폭발 범위 안에 있으면 피해 (무적 상태면 무시)
+    if (this.player.active && !this.player.invulnerable) {
+      const distP = Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y);
+      if (distP <= blastRadius) {
+        const dmg = Math.max(1, 25 - this.stats.armor);
+        this.registry.set('hp', this.registry.get('hp') - dmg);
+        if (this.registry.get('hp') <= 0) {
+          this.scene.stop('UIScene');
+          this.scene.start('GameOverScene');
+        } else {
+          this.player.invulnerable = true;
+          this.player.setAlpha(0.5);
+          this.time.delayedCall(1000, () => { if (this.player.active) { this.player.invulnerable = false; this.player.setAlpha(1); } });
+        }
+      }
+    }
+
+    // 주변 다른 방해꾼들에게도 연쇄 피해 (도미노 폭발)
+    this.enemies.getChildren().forEach(other => {
+      if (other.active && other !== sourceEnemy && !other.isBoss && other.enemyType !== 'projectile') {
+        const d = Phaser.Math.Distance.Between(x, y, other.x, other.y);
+        if (d <= blastRadius) {
+          other.hp -= 30;
+          this.flashEnemy(other);
+          this.checkEnemyDeath(other);
+        }
+      }
+    });
+
+    // 폭발 이펙트 (주황 링이 빠르게 퍼짐)
+    const boom = this.add.circle(x, y, 10, 0xe67e22, 0.6);
+    boom.setStrokeStyle(4, 0xffffff, 0.8);
+    this.tweens.add({ targets: boom, radius: blastRadius, alpha: 0, duration: 300, onComplete: () => boom.destroy() });
+  }
+
+  hurtPlayer(player, enemy) {
+    if (player.active && enemy.active && !player.invulnerable) {
+      let dmg = Math.max(1, (enemy.isBoss ? 40 : 15) - this.stats.armor); 
+      this.registry.set('hp', this.registry.get('hp') - dmg);
+      
+      if (enemy.enemyType === 'projectile') {
+        enemy.disableBody(true, true);
+      }
+
+      if (this.registry.get('hp') <= 0) {
+        this.scene.stop('UIScene');
+        this.scene.start('GameOverScene');
+      } else {
+        player.invulnerable = true;
+        player.setAlpha(0.5);
+        this.time.delayedCall(1000, () => { if (player.active) { player.invulnerable = false; player.setAlpha(1); } });
+      }
+    }
+  }
+
+  collectExp(player, exp) {
+    if (exp.active) {
+      exp.disableBody(true, true);
+      let cExp = this.registry.get('exp') + (10 * this.stats.expMult); 
+      this.registry.set('exp', cExp);
+    }
+  }
+
+  collectItem(player, item) {
+    if (item.active) {
+      if (item.itemType === 'chest') {
+        if (this.scene.isActive('LevelUpScene') || this.scene.isActive('ChestScene') || this.scene.isActive('InventoryScene')) {
+          return; 
+        }
+        item.disableBody(true, true);
+        this.scene.pause();
+        this.scene.launch('ChestScene');
+      } 
+      else if (item.itemType === 'bandaid') {
+        item.disableBody(true, true);
+        let maxHp = this.registry.get('maxHp');
+        let heal = Math.floor(maxHp * 0.1); 
+        this.registry.set('hp', Math.min(maxHp, this.registry.get('hp') + heal));
+        let flashText = this.add.text(player.x, player.y - 20, '+10% HP', { fontSize: '20px', fill: '#2ecc71', fontStyle: 'bold', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
+        this.tweens.add({ targets: flashText, y: player.y - 60, alpha: 0, duration: 1000, onComplete: () => flashText.destroy() });
+      }
+      else if (item.itemType === 'gold') {
+        item.disableBody(true, true);
+        let gold = parseInt(localStorage.getItem('gold')) || 0;
+        const goldGain = 10 + (this.skills.moneybook || 0) * 3; // 용돈기입장 레벨당 획득 골드 +3
+        gold += goldGain;
+        localStorage.setItem('gold', gold.toString());
+        let flashText = this.add.text(player.x, player.y - 40, `+${goldGain} G`, { fontSize: '20px', fill: '#f1c40f', fontStyle: 'bold', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
+        this.tweens.add({ targets: flashText, y: player.y - 80, alpha: 0, duration: 1000, onComplete: () => flashText.destroy() });
+      }
+      else if (item.itemType === 'magnet') {
+        item.disableBody(true, true);
+        this.exps.getChildren().forEach(exp => {
+          if (exp.active) exp.isMagnetized = true;
+        });
+        this.items.getChildren().forEach(i => {
+          if (i.active && i.itemType === 'gold') i.isMagnetized = true;
+        });
+        let flashText = this.add.text(player.x, player.y - 40, '🧲 자석 획득!', { fontSize: '24px', fill: '#3498db', fontStyle: 'bold', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
+        this.tweens.add({ targets: flashText, y: player.y - 80, alpha: 0, duration: 1000, onComplete: () => flashText.destroy() });
+      }
+      else if (item.itemType === 'bomb') {
+        item.disableBody(true, true);
+        this.cameras.main.flash(500, 255, 255, 255);
+        this.enemies.getChildren().forEach(e => {
+          if (e.active && !e.isBoss) {
+            e.hp = 0;
+            this.checkEnemyDeath(e);
+          }
+        });
+        let flashText = this.add.text(player.x, player.y - 40, '💣 싹쓸이!', { fontSize: '24px', fill: '#e74c3c', fontStyle: 'bold', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
+        this.tweens.add({ targets: flashText, y: player.y - 80, alpha: 0, duration: 1000, onComplete: () => flashText.destroy() });
+      }
+      else if (item.itemType === 'sticker') {
+        item.disableBody(true, true);
+        const buffDuration = 6000 + this.skills.sticker * 500;
+        this.stats.damageMult *= 1.2;
+        this.stats.speedMult *= 1.15;
+        this.stats.cooldownMult = Math.max(0.1, this.stats.cooldownMult * 0.85);
+        this.updateWeaponTimers();
+        let flashText = this.add.text(player.x, player.y - 40, '⭐ 칭찬 스티커! 능력치 상승!', { fontSize: '22px', fill: '#f1c40f', fontStyle: 'bold', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
+        this.tweens.add({ targets: flashText, y: player.y - 80, alpha: 0, duration: 1200, onComplete: () => flashText.destroy() });
+        this.time.delayedCall(buffDuration, () => {
+          if (this.player.active) {
+            this.recalculateStats();
+          }
+        });
+      }
+    }
+  }
+
+  // ─── ⭐ 칭찬 스티커판: 주기적으로 필드에 스티커를 띄움 ────────────────
+  spawnStickerItem() {
+    const item = this.items.get();
+    if (item) {
+      const rx = this.player.x + Phaser.Math.Between(-200, 200);
+      const ry = this.player.y + Phaser.Math.Between(-200, 200);
+      item.enableBody(true, rx, ry, true, true);
+      item.setTexture('sticker_item').setScale(1.3);
+      item.itemType = 'sticker';
+    }
+  }
+
+  update(time, delta) {
+    this.gameTime += delta;
+    const timeSec = Math.floor(this.gameTime / 1000);
+    this.registry.set('time', timeSec);
+    
+    if (this.registry.get('exp') >= this.registry.get('maxExp') && !this.scene.isActive('LevelUpScene') && !this.scene.isActive('ChestScene') && !this.scene.isActive('InventoryScene')) {
+      let cExp = this.registry.get('exp');
+      let mExp = this.registry.get('maxExp');
+      this.registry.set('exp', cExp - mExp);
+      this.registry.set('level', this.registry.get('level') + 1);
+      this.registry.set('maxExp', Math.floor(mExp * 1.3) + 5);
+      this.scene.pause();
+      this.scene.launch('LevelUpScene');
+    }
+
+    // 방학숙제(최종보스): 15분마다 등장, 다른 두 보스보다 우선순위가 높음
+    if (timeSec > 0 && timeSec % 900 === 0 && timeSec !== this.lastHomeworkBossTime) {
+      this.lastHomeworkBossTime = timeSec;
+      this.spawnHomeworkBoss();
+    }
+
+    // 종합평가: 5분마다 등장, 단 방학숙제가 활동 중일 때는 등장하지 않음
+    if (timeSec > 0 && timeSec % 300 === 0 && timeSec !== this.lastBossTime && !this.homeworkBossActive) {
+      this.lastBossTime = timeSec;
+      this.spawnBoss();
+    }
+
+    // 단원평가(탱커형 보스): 60초마다 등장, 단 종합평가나 방학숙제가 활동 중일 때는 등장하지 않음
+    if (timeSec > 0 && timeSec % 60 === 0 && timeSec !== this.lastUnitBossTime && !this.finalBossActive) {
+      this.lastUnitBossTime = timeSec;
+      this.spawnUnitTestBoss();
+    }
+
+    // 알림장 검사: 45초마다 (15초 이후부터) 안전지대 이벤트 발생
+    if (timeSec > 15 && timeSec % 45 === 0 && timeSec !== this.lastNoticeCheckTime) {
+      this.lastNoticeCheckTime = timeSec;
+      this.triggerNoticeCheck();
+    }
+
+    let newDelay = Math.max(50, 1000 - Math.floor(timeSec * 0.55));
+    if (newDelay !== this.spawnDelay) { this.spawnDelay = newDelay; this.spawnTimerEvent.delay = this.spawnDelay; }
+    
+    // 30분 생존(클리어) 체크 (1800초)
+    if (timeSec >= 1800 && !this.gameCleared) {
+      this.gameCleared = true;
+      this.scene.pause();
+      this.scene.launch('GameClearScene');
+    }
+
+    const speed = 200 * this.stats.speedMult * (this.playerInDust ? 0.75 : 1);
+    let vx = 0, vy = 0;
+    if (this.cursors.left.isDown || this.wasd.left.isDown) vx = -speed;
+    else if (this.cursors.right.isDown || this.wasd.right.isDown) vx = speed;
+    if (this.cursors.up.isDown || this.wasd.up.isDown) vy = -speed;
+    else if (this.cursors.down.isDown || this.wasd.down.isDown) vy = speed;
+
+    if (vx !== 0 && vy !== 0) { vx *= 0.7071; vy *= 0.7071; }
+    this.player.setVelocity(vx, vy);
+
+    if (vx !== 0 || vy !== 0) {
+      this.player.lastDirX = vx > 0 ? 1 : (vx < 0 ? -1 : 0);
+      this.player.lastDirY = vy > 0 ? 1 : (vy < 0 ? -1 : 0);
+    }
+
+    // 소모품 단축키 처리
+    if (Phaser.Input.Keyboard.JustDown(this.keyZ) && this.consumables.magnet) {
+      this.consumables.magnet = false;
+      this.exps.getChildren().forEach(exp => { if (exp.active) this.physics.moveToObject(exp, this.player, 800); });
+      let ft = this.add.text(this.player.x, this.player.y - 40, '🧲 자석 사용!', { fontSize: '24px', fill: '#3498db', fontStyle: 'bold', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
+      this.tweens.add({ targets: ft, y: this.player.y - 80, alpha: 0, duration: 1000, onComplete: () => ft.destroy() });
+    }
+    if (Phaser.Input.Keyboard.JustDown(this.keyX) && this.consumables.bomb) {
+      this.consumables.bomb = false;
+      this.cameras.main.flash(500, 255, 255, 255);
+      this.enemies.getChildren().forEach(e => {
+        if (e.active && !e.isBoss) { e.hp = 0; this.checkEnemyDeath(e); }
+      });
+      let ft = this.add.text(this.player.x, this.player.y - 40, '💣 싹쓸이!', { fontSize: '24px', fill: '#e74c3c', fontStyle: 'bold', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
+      this.tweens.add({ targets: ft, y: this.player.y - 80, alpha: 0, duration: 1000, onComplete: () => ft.destroy() });
+    }
+
+    this.projectiles.getChildren().forEach(p => {
+      if (p.active && p.deathTime && time > p.deathTime) {
+        p.deathTime = null;
+        if (p.weaponType === 'praise') {
+          p.destroy();
+        } else {
+          p.disableBody(true, true);
+        }
+      }
+    });
+    this.pools.getChildren().forEach(p => {
+      if (p.active && p.deathTime && time > p.deathTime) {
+        p.deathTime = null;
+        if (p.safetyLabel) { p.safetyLabel.destroy(); p.safetyLabel = null; }
+        p.disableBody(true, true);
+      }
+    });
+
+    if (vx < 0) this.player.setFlipX(true);
+    else if (vx > 0) this.player.setFlipX(false);
+
+    // 이동 중일 때만 바운스 tween 활성화
+    const nowMoving = (vx !== 0 || vy !== 0);
+    if (nowMoving && !this._isMoving) {
+      this._isMoving = true;
+      if (this._bounceTween) this._bounceTween.resume();
+    } else if (!nowMoving && this._isMoving) {
+      this._isMoving = false;
+      if (this._bounceTween) { this._bounceTween.pause(); this.player.setOrigin(0.5, 0.5); }
+    }
+
+    if (this.skills.orbit > 0) {
+      this.orbitAngle += 0.05;
+      const isEvo = this.skills.orbit >= 6;
+      const count = (isEvo ? 3 : 1) * this.skills.orbit + this.stats.amount; 
+      const radius = 80 * this.stats.sizeMult * (isEvo ? 1.5 : 1);
+      
+      // filter()로 매 프레임 새 배열을 만드는 대신, 개수만 세는 방식으로 변경 (GC 부담 감소, 동작은 동일)
+      let orbitCount = 0;
+      this.projectiles.getChildren().forEach(p => { if (p.active && p.weaponType === 'orbit') orbitCount++; });
+      if (orbitCount < count) {
+        const p = this.projectiles.get();
+        if(p) { 
+          p.enableBody(true, this.player.x, this.player.y, true, true);
+          p.setTexture('orbit_bullet').setScale(this.stats.sizeMult * (isEvo ? 2 : 1)); 
+          if(isEvo) p.setTint(0xffd700);
+          else p.clearTint();
+          p.weaponType = 'orbit'; p.damage = this.calculateDamage(8 + this.skills.orbit*2) * (isEvo ? 3 : 1); p.pierce=999; 
+        }
+      }
+      let i = 0;
+      this.projectiles.getChildren().forEach(p => {
+        if (p.active && p.weaponType === 'orbit') {
+          if (i >= count) p.disableBody(true, true);
+          else {
+            const angle = this.orbitAngle + (Math.PI * 2 / count) * i;
+            p.x = this.player.x + Math.cos(angle) * radius;
+            p.y = this.player.y + Math.sin(angle) * radius;
+            i++;
+          }
+        }
+      });
+    }
+
+    // ─── 지속 데미지 오라 (리코더) ───
+    if (this.skills.recorder > 0) {
+      const isEvo = this.skills.recorder >= 6;
+      this.recorderAura.setVisible(true);
+      this.recorderAura.x = this.player.x;
+      this.recorderAura.y = this.player.y;
+      if (isEvo) this.recorderAura.setFillStyle(0xffd700, 0.4);
+      const r = 100 * this.stats.sizeMult * (isEvo ? 2 : 1) + (this.skills.recorder * 10);
+      this.recorderAura.setRadius(r);
+      
+      // 음표 파티클 효과 (시각적)
+      if (!this.lastNoteTime || time - this.lastNoteTime > 200) {
+        this.lastNoteTime = time;
+        const note = this.add.image(this.player.x + Phaser.Math.Between(-20, 20), this.player.y + Phaser.Math.Between(-20, 20), 'recorder_note');
+        if (isEvo) note.setTint(0xffd700);
+        this.tweens.add({
+          targets: note,
+          x: note.x + Phaser.Math.Between(-r, r),
+          y: note.y + Phaser.Math.Between(-r, r),
+          alpha: 0,
+          scale: 1.5,
+          angle: Phaser.Math.Between(-45, 45),
+          duration: 800,
+          onComplete: () => note.destroy()
+        });
+      }
+
+      // 반경 비교는 제곱거리로 계산해 sqrt 연산을 생략 (결과는 기존과 동일)
+      const rSq = r * r;
+      this.enemies.getChildren().forEach(enemy => {
+        if (!enemy.active) return;
+        const dxAura = enemy.x - this.player.x, dyAura = enemy.y - this.player.y;
+        if ((dxAura * dxAura + dyAura * dyAura) <= rSq) {
+          if (!enemy.lastAuraHit || this.time.now - enemy.lastAuraHit > 500) {
+            enemy.hp -= this.calculateDamage(5 + this.skills.recorder * 3) * (isEvo ? 4 : 1);
+            enemy.lastAuraHit = this.time.now;
+            enemy.x += Math.cos(Phaser.Math.Angle.Between(this.player.x, this.player.y, enemy.x, enemy.y)) * (isEvo ? 30 : 15);
+            enemy.y += Math.sin(Phaser.Math.Angle.Between(this.player.x, this.player.y, enemy.x, enemy.y)) * (isEvo ? 30 : 15);
+            this.flashEnemy(enemy);
+            this.checkEnemyDeath(enemy);
+          }
+        }
+      });
+    } else this.recorderAura.setVisible(false);
+
+    this.pools.getChildren().forEach(pool => {
+      if (pool.active) {
+        const poolRadius = 40 * pool.scale * this.stats.poolRadiusMult;
+        const poolRadiusSq = poolRadius * poolRadius; // 제곱거리 비교로 sqrt 연산 생략 (결과는 기존과 동일)
+        this.enemies.getChildren().forEach(enemy => {
+          if (!enemy.active) return;
+          const dxPool = enemy.x - pool.x, dyPool = enemy.y - pool.y;
+          if ((dxPool * dxPool + dyPool * dyPool) <= poolRadiusSq) {
+            if (!enemy.lastPoolHit || this.time.now - enemy.lastPoolHit > 500) {
+              enemy.hp -= pool.damage;
+              enemy.lastPoolHit = this.time.now;
+              this.flashEnemy(enemy);
+              this.checkEnemyDeath(enemy);
+            }
+          }
+        });
+      }
+    });
+
+    // 비행기(airplane)는 일직선으로 날아가며 관통하므로 update루프에서의 추가 처리가 필요없습니다.
+
+    // 미세먼지 구름 근접 여부는 이번 프레임 기준으로 다시 계산
+    this.playerInDust = false;
+
+    this.enemies.getChildren().forEach(enemy => {
+      if (enemy.active) {
+        // 수업 종(bell)에 얼어붙은 상태면 이동 로직을 건너뜁니다.
+        if (enemy.frozenUntil && this.time.now < enemy.frozenUntil) {
+          enemy.setVelocity(0, 0);
+          return;
+        }
+        if (enemy.enemyType === 'smartphone') {
+          const dist = Phaser.Math.Distance.Between(this.player.x, this.player.y, enemy.x, enemy.y);
+          if (dist < 300) this.physics.moveToObject(enemy, this.player, -enemy.speed);
+          else if (dist > 500) this.physics.moveToObject(enemy, this.player, enemy.speed);
+          else enemy.setVelocity(0, 0);
+          
+          if (this.time.now - enemy.lastShoot > 3000) {
+            enemy.lastShoot = this.time.now;
+            let proj = this.enemies.get();
+            if (proj) {
+              proj.enableBody(true, enemy.x, enemy.y, true, true);
+              proj.setTexture('exp').setTint(0xff0000).setScale(1.5);
+              proj.hp = 1; proj.speed = 300; proj.enemyType = 'projectile'; proj.isBoss = false;
+              this.physics.moveToObject(proj, this.player, proj.speed);
+              this.time.delayedCall(2000, () => { if(proj.active) proj.disableBody(true, true); });
+            }
+          }
+        } else if (enemy.enemyType === 'sleep') {
+          if (!enemy.isDashing) {
+            if (this.time.now - enemy.lastDash > 4000) {
+              enemy.isDashing = true;
+              enemy.setVelocity(0, 0);
+              let ft = this.add.text(enemy.x, enemy.y - 20, 'Zzz...', { fontSize: '20px', fill: '#9b59b6', fontStyle: 'bold' }).setOrigin(0.5);
+              this.tweens.add({ targets: ft, y: enemy.y - 40, alpha: 0, duration: 800, onComplete: () => ft.destroy() });
+              this.time.delayedCall(800, () => {
+                if (enemy.active) {
+                  this.physics.moveToObject(enemy, this.player, 400); 
+                  enemy.lastDash = this.time.now;
+                  this.time.delayedCall(500, () => { enemy.isDashing = false; });
+                }
+              });
+            } else {
+              this.physics.moveToObject(enemy, this.player, enemy.speed);
+            }
+          }
+        } else if (enemy.enemyType === 'bomb') {
+          // 숙제 폭탄: 평범하게 추적하다 처치되면 checkEnemyDeath에서 폭발
+          this.physics.moveToObject(enemy, this.player, enemy.speed || 45);
+        } else if (enemy.enemyType === 'dust') {
+          // 미세먼지 구름: 아주 느리게 부유하며 접근, 근처에 있으면 플레이어를 슬로우 + 화면을 뿌옇게
+          this.physics.moveToObject(enemy, this.player, enemy.speed || 30);
+          if (Phaser.Math.Distance.Between(this.player.x, this.player.y, enemy.x, enemy.y) <= 140) {
+            this.playerInDust = true;
+          }
+        } else if (enemy.enemyType === 'normal' || !enemy.enemyType) {
+          this.physics.moveToObject(enemy, this.player, enemy.speed || 80);
+        } else if (enemy.enemyType === 'boss_shooter') {
+          // 탄막형 보스: 적당한 거리를 유지하며 주기적으로 탄막을 발사
+          const distB = Phaser.Math.Distance.Between(this.player.x, this.player.y, enemy.x, enemy.y);
+          if (distB < 320) this.physics.moveToObject(enemy, this.player, -enemy.speed);
+          else if (distB > 480) this.physics.moveToObject(enemy, this.player, enemy.speed);
+          else enemy.setVelocity(0, 0);
+
+          // 패턴 A: 사방으로 퍼지는 원형 탄막
+          if (!enemy.lastRingTime || this.time.now - enemy.lastRingTime > 2600) {
+            enemy.lastRingTime = this.time.now;
+            const bulletCount = 12;
+            for (let i = 0; i < bulletCount; i++) {
+              const bAngle = (Math.PI * 2 / bulletCount) * i;
+              const b = this.enemies.get();
+              if (b) {
+                b.enableBody(true, enemy.x, enemy.y, true, true);
+                b.setTexture('exp').setTint(0xff0000).setScale(1.4);
+                b.hp = 1; b.speed = 220; b.enemyType = 'projectile'; b.isBoss = false;
+                b.setVelocity(Math.cos(bAngle) * b.speed, Math.sin(bAngle) * b.speed);
+                this.time.delayedCall(2500, () => { if (b.active) b.disableBody(true, true); });
+              }
+            }
+          }
+
+          // 패턴 B: 플레이어를 겨냥한 부채꼴 탄막
+          if (!enemy.lastSpreadTime || this.time.now - enemy.lastSpreadTime > 4200) {
+            enemy.lastSpreadTime = this.time.now;
+            const baseAngle = Phaser.Math.Angle.Between(enemy.x, enemy.y, this.player.x, this.player.y);
+            const spreadOffsets = [-0.35, -0.17, 0, 0.17, 0.35];
+            spreadOffsets.forEach(offset => {
+              const b = this.enemies.get();
+              if (b) {
+                b.enableBody(true, enemy.x, enemy.y, true, true);
+                b.setTexture('exp').setTint(0xff0000).setScale(1.6);
+                b.hp = 1; b.speed = 260; b.enemyType = 'projectile'; b.isBoss = false;
+                const a = baseAngle + offset;
+                b.setVelocity(Math.cos(a) * b.speed, Math.sin(a) * b.speed);
+                this.time.delayedCall(2200, () => { if (b.active) b.disableBody(true, true); });
+              }
+            });
+          }
+
+          // 패턴 C: 회전하며 퍼져나가는 나선형 탄막
+          if (!enemy.lastSpiralTime || this.time.now - enemy.lastSpiralTime > 6500) {
+            enemy.lastSpiralTime = this.time.now;
+            enemy.spiralAngle = Phaser.Math.Between(0, 360) * Math.PI / 180;
+            this.time.addEvent({
+              delay: 90,
+              repeat: 19,
+              callback: () => {
+                if (enemy.active && enemy.enemyType === 'boss_shooter') {
+                  const b = this.enemies.get();
+                  if (b) {
+                    b.enableBody(true, enemy.x, enemy.y, true, true);
+                    b.setTexture('exp').setTint(0x9b59b6).setScale(1.3);
+                    b.hp = 1; b.speed = 200; b.enemyType = 'projectile'; b.isBoss = false;
+                    b.setVelocity(Math.cos(enemy.spiralAngle) * b.speed, Math.sin(enemy.spiralAngle) * b.speed);
+                    this.time.delayedCall(2800, () => { if (b.active) b.disableBody(true, true); });
+                  }
+                  enemy.spiralAngle += 0.6; // 매 발사마다 각도를 조금씩 틀어서 나선 모양을 만듦
+                }
+              }
+            });
+          }
+        } else if (enemy.enemyType === 'boss_tank') {
+          // 단원평가(탱커형 보스): 평소엔 천천히 추적하다 주기적으로 강하게 돌진
+          if (!enemy.isDashing) {
+            if (this.time.now - enemy.lastDash > 3000) {
+              enemy.isDashing = true;
+              enemy.setVelocity(0, 0);
+              let ft = this.add.text(enemy.x, enemy.y - 30, '💥 돌진 준비!', { fontSize: '20px', fill: '#e67e22', fontStyle: 'bold', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
+              this.tweens.add({ targets: ft, y: enemy.y - 50, alpha: 0, duration: 600, onComplete: () => ft.destroy() });
+              this.time.delayedCall(600, () => {
+                if (enemy.active) {
+                  this.physics.moveToObject(enemy, this.player, 450);
+                  enemy.lastDash = this.time.now;
+                  this.time.delayedCall(700, () => { if (enemy.active) enemy.isDashing = false; });
+                }
+              });
+            } else {
+              this.physics.moveToObject(enemy, this.player, enemy.speed);
+            }
+          }
+        } else if (enemy.enemyType === 'boss_final') {
+          // 방학숙제(최종보스): 탄막(종합평가) + 돌진(단원평가)을 함께 사용, 체력 50% 이하부터 폭주(2페이즈)
+          const isEnraged = enemy.hp <= (enemy.maxHp || enemy.hp) * 0.5;
+
+          if (isEnraged && !enemy.enrageAnnounced) {
+            enemy.enrageAnnounced = true;
+            let ef = this.add.text(enemy.x, enemy.y - 90, '🔥 방학숙제가 폭주합니다!', { fontSize: '26px', fill: '#ff0000', fontStyle: 'bold', stroke: '#000', strokeThickness: 5 }).setOrigin(0.5);
+            this.tweens.add({ targets: ef, alpha: 0, y: ef.y - 40, duration: 1500, onComplete: () => ef.destroy() });
+          }
+
+          if (!enemy.isDashing) {
+            const distF = Phaser.Math.Distance.Between(this.player.x, this.player.y, enemy.x, enemy.y);
+            if (distF < 300) this.physics.moveToObject(enemy, this.player, -enemy.speed);
+            else if (distF > 460) this.physics.moveToObject(enemy, this.player, enemy.speed);
+            else enemy.setVelocity(0, 0);
+          }
+
+          // 탄막 패턴: 사방으로 퍼지는 원형 탄막 (폭주 시 더 자주, 더 많이)
+          const ringInterval = isEnraged ? 1800 : 3000;
+          if (!enemy.lastRingTime || this.time.now - enemy.lastRingTime > ringInterval) {
+            enemy.lastRingTime = this.time.now;
+            const bulletCount = isEnraged ? 18 : 12;
+            for (let i = 0; i < bulletCount; i++) {
+              const bAngle = (Math.PI * 2 / bulletCount) * i;
+              const b = this.enemies.get();
+              if (b) {
+                b.enableBody(true, enemy.x, enemy.y, true, true);
+                b.setTexture('exp').setTint(0xf39c12).setScale(1.4);
+                b.hp = 1; b.speed = 230; b.enemyType = 'projectile'; b.isBoss = false;
+                b.setVelocity(Math.cos(bAngle) * b.speed, Math.sin(bAngle) * b.speed);
+                this.time.delayedCall(2600, () => { if (b.active) b.disableBody(true, true); });
+              }
+            }
+          }
+
+          // 돌진 패턴: 탱커형 요소로 주기적으로 강하게 돌진 (폭주 시 더 자주, 더 빠르게)
+          const dashInterval = isEnraged ? 2200 : 3800;
+          if (!enemy.isDashing && (this.time.now - enemy.lastDash > dashInterval)) {
+            enemy.isDashing = true;
+            enemy.setVelocity(0, 0);
+            let ft2 = this.add.text(enemy.x, enemy.y - 30, '💥 돌진 준비!', { fontSize: '20px', fill: '#e67e22', fontStyle: 'bold', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
+            this.tweens.add({ targets: ft2, y: ft2.y - 50, alpha: 0, duration: 600, onComplete: () => ft2.destroy() });
+            const dashSpeed = isEnraged ? 520 : 420;
+            this.time.delayedCall(600, () => {
+              if (enemy.active) {
+                this.physics.moveToObject(enemy, this.player, dashSpeed);
+                enemy.lastDash = this.time.now;
+                this.time.delayedCall(700, () => { if (enemy.active) enemy.isDashing = false; });
+              }
+            });
+          }
+        } else if (enemy.enemyType === 'projectile') {
+          // 탄막: 맵 경계에 닿으면 사라짐 (시간 초과에 의한 소멸은 각 발사 로직에서 별도 처리)
+          if (enemy.x < 0 || enemy.x > 4000 || enemy.y < 0 || enemy.y > 4000) {
+            enemy.disableBody(true, true);
+          }
+        }
+      }
+    });
+
+    if (this.playerInDust !== this.prevInDust) {
+      this.prevInDust = this.playerInDust;
+      this.registry.set('inDust', this.playerInDust);
+    }
+
+
+    const pullDist = 120 * this.stats.magnetMult;
+    this.exps.getChildren().forEach(exp => {
+      if (exp.active) {
+        if (exp.isMagnetized || Phaser.Math.Distance.Between(this.player.x, this.player.y, exp.x, exp.y) < pullDist) {
+          this.physics.moveToObject(exp, this.player, exp.isMagnetized ? 800 : 400);
+        } else {
+          exp.setVelocity(0, 0);
+        }
+      }
+    });
+    this.items.getChildren().forEach(item => {
+      if (item.active) {
+        if (item.isMagnetized || Phaser.Math.Distance.Between(this.player.x, this.player.y, item.x, item.y) < pullDist) {
+          this.physics.moveToObject(item, this.player, item.isMagnetized ? 800 : 400);
+        } else {
+          item.setVelocity(0, 0);
+        }
+      }
+    });
+  }
+}
+
+class UIScene extends Phaser.Scene {
+  constructor() { super('UIScene'); }
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+    this.add.rectangle(0, 0, width, 24, 0x2c3e50).setOrigin(0);
+    this.expBar = this.add.rectangle(0, 0, 0, 24, 0x2ecc71).setOrigin(0);
+
+    this.levelText = this.add.text(10, 30, '레벨: 1', { fontSize: '24px', fill: '#fff', fontStyle: 'bold', stroke: '#000', strokeThickness: 4 });
+    this.hpText = this.add.text(width/2, 30, '체력: 100/100', { fontSize: '24px', fill: '#e74c3c', fontStyle: 'bold', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5, 0);
+    this.killsText = this.add.text(width - 10, 30, '물리친 수: 0', { fontSize: '24px', fill: '#f1c40f', fontStyle: 'bold', stroke: '#000', strokeThickness: 4 }).setOrigin(1, 0);
+    this.timeText = this.add.text(width/2, 65, '00:00', { fontSize: '32px', fill: '#ecf0f1', fontStyle: 'bold', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5, 0);
+
+    // ── 보스 이름 + 체력바 (보스가 활성화된 동안만 표시) ──────────────────────────────
+    const bossBarWidth = Math.min(500, width * 0.5);
+    this.bossNameText = this.add.text(width/2, 96, '', { fontSize: '20px', fill: '#fff', fontStyle: 'bold', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5).setVisible(false);
+    this.bossBarBg = this.add.rectangle(width/2, 122, bossBarWidth, 18, 0x000000, 0.6).setOrigin(0.5).setStrokeStyle(2, 0xffffff).setVisible(false);
+    this.bossBarFill = this.add.rectangle(width/2 - bossBarWidth/2, 122, bossBarWidth, 18, 0xe74c3c).setOrigin(0, 0.5).setVisible(false);
+    this.bossBarWidth = bossBarWidth;
+    
+    const bagBtn = this.add.text(10, 65, '🎒 가방 (아이템 확인)', { fontSize: '22px', fill: '#fff', backgroundColor: '#8e44ad', padding: { x: 15, y: 8 }, borderRadius: 5 }).setInteractive({ useHandCursor: true });
+    bagBtn.on('pointerdown', () => {
+      if (this.scene.isActive('LevelUpScene') || this.scene.isActive('ChestScene')) return;
+      this.scene.pause('GameScene');
+      this.scene.launch('InventoryScene');
+    });
+
+    this.events.on('shutdown', () => {
+      this.registry.events.off('changedata', this.updateData, this);
+    });
+    this.registry.events.on('changedata', this.updateData, this);
+    
+    // 소모품 슬롯 UI (화면 우측 하단)
+    const gs = this.scene.get('GameScene');
+    this.consumableSlots = [];
+    if (gs.consumables) {
+      const slotDefs = [
+        { key: 'magnet', label: 'Z', icon: '🧲', color: '#3498db' },
+        { key: 'bomb',   label: 'X', icon: '💣', color: '#e74c3c' }
+      ];
+      slotDefs.forEach((def, i) => {
+        const x = width - 90 + (i * 0) ;
+        const y = 720 - 90 - i * 70;
+        const bg = this.add.rectangle(x, y, 60, 60, 0x000000, 0.5).setOrigin(0.5).setStrokeStyle(2, 0xffffff);
+        const ico = this.add.text(x, y - 8, def.icon, { fontSize: '28px' }).setOrigin(0.5);
+        const keyLbl = this.add.text(x, y + 16, def.label + '키', { fontSize: '14px', fill: def.color, fontStyle: 'bold' }).setOrigin(0.5);
+        // 보유 안 하면 흐릿하게
+        if (!gs.consumables[def.key]) { bg.setFillStyle(0x000000, 0.15); ico.setAlpha(0.3); keyLbl.setAlpha(0.3); }
+        this.consumableSlots.push({ def, bg, ico, keyLbl, active: gs.consumables[def.key] });
+      });
+    }
+
+    // ── 미세먼지 구름 근접 시 화면을 뿌옇게 만드는 오버레이 (기본은 투명) ──────────────────────────────
+    this.dustOverlay = this.add.rectangle(0, 0, width, height, 0xb2a99a, 0).setOrigin(0).setDepth(999);
+
+    // ── 미니맵 (좌측 하단, 몬스터=검정 점 / 나=초록 점) ──────────────────────────────
+    this.minimap = { size: 150, margin: 14, worldW: 4000, worldH: 4000 };
+    this.minimap.x = this.minimap.margin;
+    this.minimap.y = height - this.minimap.size - this.minimap.margin;
+    this.add.rectangle(this.minimap.x, this.minimap.y, this.minimap.size, this.minimap.size, 0x000000, 0.45)
+      .setOrigin(0).setStrokeStyle(2, 0xffffff, 0.7);
+    this.minimapGfx = this.add.graphics();
+  }
+  
+  update() {
+    const gs = this.scene.get('GameScene');
+    if (!gs) return;
+
+    // ── 미니맵 갱신 ──────────────────────────────
+    if (this.minimapGfx && gs.player && gs.enemies) {
+      const { x: mapX, y: mapY, size, worldW, worldH } = this.minimap;
+      this.minimapGfx.clear();
+
+      // 몬스터: 검정 점
+      this.minimapGfx.fillStyle(0x000000, 1);
+      gs.enemies.getChildren().forEach(e => {
+        if (e.active) {
+          const ex = Phaser.Math.Clamp(mapX + (e.x / worldW) * size, mapX, mapX + size - 2);
+          const ey = Phaser.Math.Clamp(mapY + (e.y / worldH) * size, mapY, mapY + size - 2);
+          this.minimapGfx.fillRect(ex, ey, 2, 2);
+        }
+      });
+
+      // 보스 전용 마커: 눈에 띄는 빨간 원 (일반 몬스터 점 위에 덧그림)
+      gs.enemies.getChildren().forEach(e => {
+        if (e.active && e.isBoss) {
+          const bx = Phaser.Math.Clamp(mapX + (e.x / worldW) * size, mapX, mapX + size - 5);
+          const by = Phaser.Math.Clamp(mapY + (e.y / worldH) * size, mapY, mapY + size - 5);
+          this.minimapGfx.fillStyle(0xe74c3c, 1);
+          this.minimapGfx.fillCircle(bx, by, 4);
+          this.minimapGfx.lineStyle(1, 0xffffff, 0.9);
+          this.minimapGfx.strokeCircle(bx, by, 4);
+        }
+      });
+
+      // 나: 초록 점 (몬스터 점 위에 덧그려서 항상 잘 보이게)
+      const px = Phaser.Math.Clamp(mapX + (gs.player.x / worldW) * size, mapX, mapX + size - 3);
+      const py = Phaser.Math.Clamp(mapY + (gs.player.y / worldH) * size, mapY, mapY + size - 3);
+      this.minimapGfx.fillStyle(0x2ecc71, 1);
+      this.minimapGfx.fillRect(px, py, 3, 3);
+    }
+
+    // ── 보스 이름 + 체력바 갱신 ──────────────────────────────
+    if (this.bossNameText && gs.enemies) {
+      let boss = null;
+      gs.enemies.getChildren().forEach(e => { if (e.active && e.isBoss && !boss) boss = e; });
+      if (boss) {
+        const bossNames = { boss_shooter: '종합평가', boss_tank: '단원평가', boss_final: '방학숙제' };
+        this.bossNameText.setText(bossNames[boss.enemyType] || '보스').setVisible(true);
+        this.bossBarBg.setVisible(true);
+        this.bossBarFill.setVisible(true);
+        const ratio = Phaser.Math.Clamp(boss.hp / (boss.maxHp || boss.hp), 0, 1);
+        this.bossBarFill.width = this.bossBarWidth * ratio;
+      } else {
+        this.bossNameText.setVisible(false);
+        this.bossBarBg.setVisible(false);
+        this.bossBarFill.setVisible(false);
+      }
+    }
+
+    if (!gs.consumables || !this.consumableSlots) return;
+    this.consumableSlots.forEach(slot => {
+      const has = gs.consumables[slot.def.key];
+      if (has !== slot.active) {
+        slot.active = has;
+        slot.bg.setFillStyle(0x000000, has ? 0.5 : 0.15);
+        slot.ico.setAlpha(has ? 1 : 0.3);
+        slot.keyLbl.setAlpha(has ? 1 : 0.3);
+      }
+    });
+  }
+
+  updateData(parent, key, data) {
+    if (!this.expBar || !this.expBar.active) return; 
+    if (key === 'exp' || key === 'maxExp') this.expBar.width = (this.registry.get('exp') / this.registry.get('maxExp')) * this.cameras.main.width;
+    else if (key === 'level') this.levelText.setText('레벨: ' + data);
+    else if (key === 'hp' || key === 'maxHp') this.hpText.setText(`체력: ${Math.floor(this.registry.get('hp'))} / ${this.registry.get('maxHp')}`);
+    else if (key === 'kills') this.killsText.setText('물리친 수: ' + data);
+    else if (key === 'time') {
+      let m = String(Math.floor(data / 60)).padStart(2, '0');
+      let s = String(data % 60).padStart(2, '0');
+      this.timeText.setText(`${m}:${s}`);
+    }
+    else if (key === 'inDust' && this.dustOverlay) {
+      this.tweens.add({ targets: this.dustOverlay, alpha: data ? 0.35 : 0, duration: 300 });
+    }
+  }
+}
+
+class InventoryScene extends Phaser.Scene {
+  constructor() { super('InventoryScene'); }
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+    const gs = this.scene.get('GameScene');
+
+    this.add.rectangle(0, 0, width, height, 0x000000, 0.9).setOrigin(0);
+    this.add.text(width/2, 60, '🎒 내 가방 (현재 보유 아이템)', { fontSize: '40px', fill: '#f1c40f', fontStyle: 'bold' }).setOrigin(0.5);
+
+    this.add.text(150, 130, '⚔️ 무기 (액티브)', { fontSize: '28px', fill: '#fff', fontStyle: 'bold' });
+    let activeY = 180;
+    
+    this.add.text(width/2 + 150, 130, '🛡️ 장비 (패시브)', { fontSize: '28px', fill: '#fff', fontStyle: 'bold' });
+    let passiveY = 180;
+
+    let hasItems = false;
+
+    Object.keys(gs.skills).forEach(key => {
+      let lvl = gs.skills[key];
+      if (lvl > 0) {
+        hasItems = true;
+        const sd = SKILL_DATA[key];
+        const isEvo = lvl >= 6;
+        const name = isEvo ? sd.evoName : sd.name;
+        const displayLvl = isEvo ? 'MAX(진화)' : `Lv.${lvl}`;
+        const color = isEvo ? '#f1c40f' : '#ecf0f1';
+        
+        let textStr = `${sd.icon} ${name} - ${displayLvl}`;
+        
+        if (sd.type === 'active') {
+          this.add.text(150, activeY, textStr, { fontSize: '22px', fill: color });
+          activeY += 45;
+        } else {
+          this.add.text(width/2 + 150, passiveY, textStr, { fontSize: '22px', fill: color });
+          passiveY += 45;
+        }
+      }
+    });
+
+    if (!hasItems) {
+      this.add.text(width/2, height/2, '아직 가진 아이템이 없습니다!', { fontSize: '24px', fill: '#7f8c8d' }).setOrigin(0.5);
+    }
+
+    const closeBtn = this.add.text(width/2, height - 80, '닫기 (게임으로 돌아가기)', { fontSize: '28px', fill: '#fff', backgroundColor: '#e74c3c', padding: { x: 30, y: 15 }, borderRadius: 10 }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    closeBtn.on('pointerdown', () => {
+      this.scene.resume('GameScene');
+      this.scene.stop();
+    });
+  }
+}
+
+class ChestScene extends Phaser.Scene {
+  constructor() { super('ChestScene'); }
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+    const gs = this.scene.get('GameScene');
+
+    this.add.rectangle(0, 0, width, height, 0x000000, 0.85).setOrigin(0);
+    this.add.text(width/2, height/2 - 250, '🎁 황금 보물 상자 발견! 🎁', { fontSize: '48px', fill: '#f1c40f', fontStyle: 'bold', stroke: '#d35400', strokeThickness: 6 }).setOrigin(0.5);
+
+    let availableOpts = [];
+    Object.keys(SKILL_DATA).forEach(key => {
+      const sd = SKILL_DATA[key];
+      const lvl = gs.skills[key];
+      if (sd.type === 'passive' && lvl > 0 && lvl < 5) availableOpts.push(key); 
+      else if (sd.type === 'active') {
+        if (lvl > 0 && lvl < 5) availableOpts.push(key);
+        else if (lvl === 5 && gs.skills[sd.evoPassive] >= 1) availableOpts.push(key); 
+      }
+    });
+
+    if (availableOpts.length === 0) {
+      Object.keys(SKILL_DATA).forEach(key => {
+        if (gs.skills[key] === 0) availableOpts.push(key);
+      });
+    }
+
+    // 단짝친구는 너무 사기라 보물 상자에서도 낮은 확률(약 15%)로만 후보에 남김
+    if (availableOpts.includes('friend') && Math.random() > 0.15) {
+      availableOpts.splice(availableOpts.indexOf('friend'), 1);
+    }
+    
+    Phaser.Utils.Array.Shuffle(availableOpts);
+    
+    const rand = Math.random();
+    let numItems = 1;
+    if (rand > 0.9) numItems = 3;
+    else if (rand > 0.7) numItems = 2;
+
+    let chosenOpts = availableOpts.slice(0, numItems);
+    if (chosenOpts.length === 0) chosenOpts = ['heal', 'heal', 'heal'].slice(0, numItems);
+    
+    chosenOpts.forEach((key, i) => {
+      let skillName;
+      if (key === 'heal') {
+        skillName = '💊 양호실 방문 (체력 회복)';
+        gs.registry.set('hp', Math.min(gs.registry.get('maxHp'), gs.registry.get('hp') + 30));
+      } else {
+        const sd = SKILL_DATA[key];
+        const lvl = gs.skills[key];
+        const isEvo = lvl === 5;
+        skillName = `${sd.icon} ${isEvo ? sd.evoName + ' (진화!)' : sd.name + ' (Lv.'+(lvl+1)+')'}`;
+        gs.skills[key]++; 
+      }
+      
+      const card = this.add.container(width/2, height/2 - 100 + (i * 100));
+      const bg = this.add.rectangle(0, 0, 600, 70, 0xd35400);
+      bg.setStrokeStyle(4, 0xf1c40f);
+      const title = this.add.text(0, 0, skillName, { fontSize: '28px', fontStyle: 'bold', color: '#fff' }).setOrigin(0.5);
+      card.add([bg, title]);
+      
+      card.setScale(0);
+      this.tweens.add({ targets: card, scale: 1, duration: 500, delay: i * 400, ease: 'Back.easeOut' });
+    });
+
+    gs.recalculateStats();
+
+    const closeBtn = this.add.text(width/2, height - 100, '모두 받기 (돌아가기)', { fontSize: '28px', fill: '#fff', backgroundColor: '#e67e22', padding: { x: 30, y: 15 }, borderRadius: 10 }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    closeBtn.setVisible(false);
+    
+    this.time.delayedCall(chosenOpts.length * 400 + 500, () => {
+      closeBtn.setVisible(true);
+    });
+
+    closeBtn.on('pointerdown', () => {
+      this.scene.resume('GameScene');
+      this.scene.stop();
+    });
+  }
+}
+
+class LevelUpScene extends Phaser.Scene {
+  constructor() { super('LevelUpScene'); }
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+    const gs = this.scene.get('GameScene');
+
+    this.add.rectangle(0, 0, width, height, 0x000000, 0.8).setOrigin(0);
+    this.add.text(width/2, height/2 - 250, '🎉 레벨 업! (새로운 배움) 🎉', { fontSize: '48px', fill: '#f1c40f', fontStyle: 'bold' }).setOrigin(0.5);
+
+    let availableOpts = [];
+    Object.keys(SKILL_DATA).forEach(key => {
+      const sd = SKILL_DATA[key];
+      const lvl = gs.skills[key];
+      if (sd.type === 'passive' && lvl < 5) availableOpts.push(key);
+      else if (sd.type === 'active') {
+        if (lvl < 5) availableOpts.push(key);
+        else if (lvl === 5 && gs.skills[sd.evoPassive] >= 1) availableOpts.push(key);
+      }
+    });
+
+    // 단짝친구는 너무 사기라 일반 레벨업에서는 절대 등장하지 않고, 보스를 잡았을 때 나오는 보물 상자에서만 낮은 확률로 등장
+    if (availableOpts.includes('friend')) {
+      availableOpts.splice(availableOpts.indexOf('friend'), 1);
+    }
+    
+    Phaser.Utils.Array.Shuffle(availableOpts);
+    let chosenOpts = availableOpts.slice(0, 3);
+    
+    if (gs.registry.get('hp') < gs.registry.get('maxHp') && Math.random() < 0.15 && chosenOpts.length > 0) {
+      chosenOpts[Phaser.Math.Between(0, chosenOpts.length - 1)] = 'clinic';
+    }
+    if (chosenOpts.length === 0) chosenOpts = ['clinic']; 
+
+    chosenOpts.forEach((key, i) => {
+      let skillName, skillDesc, icon, isEvo = false;
+      if (key === 'clinic') {
+        skillName = '🏥 보건실 휴식 (1회성)'; skillDesc = '체력을 100% 완전히 회복합니다.'; icon = '🩹';
+      } else {
+        const sd = SKILL_DATA[key];
+        const lvl = gs.skills[key];
+        isEvo = lvl === 5;
+        skillName = `${sd.icon} ${isEvo ? sd.evoName : sd.name} ${lvl === 0 ? '(신규)' : isEvo ? '(진화!)' : '(Lv.'+(lvl+1)+')'}`;
+        skillDesc = isEvo ? '궁극의 힘으로 각성합니다!' : sd.desc;
+        icon = isEvo ? '🌟' : sd.type === 'active' ? '⚔️' : '🛡️';
+      }
+
+      const card = this.add.container(width/2, height/2 - 100 + (i * 100));
+      const bg = this.add.rectangle(0, 0, 800, 80, isEvo ? 0xd35400 : key === 'clinic' ? 0x27ae60 : 0x2980b9).setInteractive({ useHandCursor: true });
+      bg.setStrokeStyle(4, isEvo ? 0xf1c40f : 0x34495e);
+      const title = this.add.text(-380, -20, skillName, { fontSize: '24px', fontStyle: 'bold', color: isEvo ? '#f1c40f' : '#fff' });
+      const desc = this.add.text(-380, 10, skillDesc, { fontSize: '18px', color: '#ecf0f1' });
+      const typeIcon = this.add.text(350, 0, icon, { fontSize: '32px' }).setOrigin(0.5);
+
+      card.add([bg, title, desc, typeIcon]);
+      bg.on('pointerover', () => bg.setFillStyle(isEvo ? 0xe67e22 : key === 'clinic' ? 0x2ecc71 : 0x3498db));
+      bg.on('pointerout', () => bg.setFillStyle(isEvo ? 0xd35400 : key === 'clinic' ? 0x27ae60 : 0x2980b9));
+      bg.on('pointerdown', () => this.selectSkill(key));
+    });
+  }
+
+  selectSkill(key) {
+    const gs = this.scene.get('GameScene');
+    if (key === 'clinic') gs.registry.set('hp', gs.registry.get('maxHp')); 
+    else { gs.skills[key]++; gs.recalculateStats(); }
+    this.scene.resume('GameScene');
+    this.scene.stop();
+  }
+}
+
+class GameOverScene extends Phaser.Scene {
+  constructor() { super('GameOverScene'); }
+  create() {
+    const width = this.cameras.main.width;
+    const height = this.cameras.main.height;
+    this.add.rectangle(0, 0, width, height, 0x000000, 0.85).setOrigin(0);
+    this.add.text(width/2, height/2 - 100, '😵 조퇴 처리되었습니다... (Game Over)', { fontSize: '56px', fill: '#e74c3c', fontStyle: 'bold', stroke: '#c0392b', strokeThickness: 6 }).setOrigin(0.5);
+    const restartBtn = this.add.text(width/2, height/2 + 80, '🔄 메인 화면으로 (상점 및 캐릭터 선택)', { fontSize: '32px', color: '#fff', backgroundColor: '#3498db', padding: { x: 30, y: 15 }, borderRadius: 10 }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    restartBtn.on('pointerdown', () => { this.scene.stop('GameOverScene'); this.scene.start('TitleScene'); });
+  }
+}
+
+const config = {
+  type: Phaser.AUTO, width: 1280, height: 720, parent: 'game-container', pixelArt: true, roundPixels: true,
+  physics: { default: 'arcade', arcade: { gravity: { y: 0 }, debug: false } },
+  scene: [BootScene, TitleScene, GameScene, UIScene, LevelUpScene, ChestScene, GameOverScene, InventoryScene, GameClearScene]
+};
+new Phaser.Game(config);
+  </script>
+</body>
+</html>

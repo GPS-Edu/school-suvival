@@ -1595,6 +1595,13 @@ const CONTACT_HITBOX = Object.freeze({
   })
 });
 
+const BOSS_REWARD_DROP = Object.freeze({
+  radius: 96,
+  spread: 2.2,
+  pickupDelay: 900,
+  edgePadding: 48
+});
+
 class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
   
@@ -2859,12 +2866,30 @@ class GameScene extends Phaser.Scene {
         if (isFinalBoss && !this.homeworkBossActive) this.finalBossActive = false; // 종합평가가 쓰러지면 단원평가가 다시 등장 가능 (방학숙제가 활동 중이면 계속 억제)
         if (isHomeworkBoss) { this.finalBossActive = false; this.homeworkBossActive = false; } // 방학숙제가 쓰러지면 모든 억제 해제
         const chestCount = isHomeworkBoss ? 4 : (isFinalBoss ? 2 : 1); // 방학숙제: 4개 / 종합평가: 2개 / 단원평가: 1개
+        // 보스를 근접해서 쓰러뜨렸을 때 상자가 플레이어 몸 위에 바로 생겨
+        // 보상 화면이 즉시 열리고 게임이 멈춘 것처럼 보이지 않도록, 플레이어의
+        // 반대 방향에 부채꼴로 펼쳐 놓는다.
+        const awayAngle = Math.atan2(by - this.player.y, bx - this.player.x);
+        const spread = chestCount > 1 ? BOSS_REWARD_DROP.spread : 0;
         for (let i = 0; i < chestCount; i++) {
           const item = this.items.get();
           if (item) {
-            item.enableBody(true, enemy.x + Phaser.Math.Between(-20, 20), enemy.y + Phaser.Math.Between(-20, 20), true, true);
+            const offset = chestCount > 1 ? -spread / 2 + spread * (i / (chestCount - 1)) : 0;
+            const radius = BOSS_REWARD_DROP.radius + (i % 2) * 12;
+            const chestX = Phaser.Math.Clamp(
+              bx + Math.cos(awayAngle + offset) * radius,
+              BOSS_REWARD_DROP.edgePadding,
+              4000 - BOSS_REWARD_DROP.edgePadding
+            );
+            const chestY = Phaser.Math.Clamp(
+              by + Math.sin(awayAngle + offset) * radius,
+              BOSS_REWARD_DROP.edgePadding,
+              4000 - BOSS_REWARD_DROP.edgePadding
+            );
+            item.enableBody(true, chestX, chestY, true, true);
             item.setTexture('chest').setScale(2.0);
             item.itemType = 'chest';
+            item.pickupReadyAt = this.time.now + BOSS_REWARD_DROP.pickupDelay;
           }
         }
       } else {
@@ -3065,9 +3090,11 @@ class GameScene extends Phaser.Scene {
   collectItem(player, item) {
     if (item.active) {
       if (item.itemType === 'chest') {
+        if (this.time.now < (item.pickupReadyAt || 0)) return;
         if (this.scene.isActive('LevelUpScene') || this.scene.isActive('ChestScene') || this.scene.isActive('InventoryScene')) {
           return; 
         }
+        item.pickupReadyAt = 0;
         item.disableBody(true, true);
         this.scene.pause();
         SFX.chest();

@@ -326,7 +326,7 @@ const SKILL_DATA = {
   lunchbox:   { name: '도시락통',         desc: '체력 회복량이 추가로 올라가고 체력이 20 증가합니다.',         icon: '🍱', type: 'passive' },
   pencilcase: { name: '필통',             desc: '모든 무기의 공격력이 추가로 12% 증가합니다.',                icon: '🖊️', type: 'passive' },
   moneybook:  { name: '용돈기입장',       desc: '몬스터 처치 시 골드 획득 확률과 양이 늘어납니다.',            icon: '📒', type: 'passive' },
-  sticker:    { name: '칭찬 스티커판',    desc: '가끔 화면에 스티커가 나타나고, 주우면 잠시 모든 능력치가 상승합니다.', icon: '⭐', type: 'passive' },
+  sticker:    { name: '칭찬 스티커',      desc: '가끔 화면에 스티커가 나타나고, 주우면 잠시 모든 능력치가 상승합니다.', icon: '⭐', type: 'passive' },
 };
 
 // ══════════════════════════════════════════════
@@ -338,7 +338,8 @@ const ACHIEVEMENT_DEFS = [
   { id: 'kills_1000',  category: 'kills',    threshold: 1000,  icon: '🎯', name: '집중상',                   desc: '누적 방해꾼 처치 1,000마리',   goldReward: 100 },
   { id: 'kills_3000',  category: 'kills',    threshold: 3000,  icon: '🏅', name: '이달의 집중왕',             desc: '누적 방해꾼 처치 3,000마리',   goldReward: 250 },
   { id: 'kills_5000',  category: 'kills',    threshold: 5000,  icon: '🗿', name: '초집중 돌부처',             desc: '누적 방해꾼 처치 5,000마리',   goldReward: 500 },
-  { id: 'kills_10000', category: 'kills',    threshold: 10000, icon: '🙏', name: '플레이해주셔서 감사합니다', desc: '누적 방해꾼 처치 10,000마리', goldReward: 1000 },
+  { id: 'kills_10000', category: 'kills',    threshold: 10000, icon: '🧘', name: '해탈의 경지',               desc: '누적 방해꾼 처치 10,000마리', goldReward: 1000 },
+  { id: 'kills_100000', category: 'kills',   threshold: 100000, icon: '🙏', name: '플레이해주셔서 감사합니다', desc: '누적 방해꾼 처치 100,000마리', goldReward: 5000 },
 
   { id: 'plays_5',     category: 'plays',    threshold: 5,  icon: '📅', name: '개근상',      desc: '누적 플레이 5회',  goldReward: 100 },
   { id: 'plays_20',    category: 'plays',    threshold: 20, icon: '📆', name: '우수 개근상',  desc: '누적 플레이 20회', goldReward: 250 },
@@ -1268,6 +1269,16 @@ class ToastScene extends Phaser.Scene {
 
 class TitleScene extends Phaser.Scene {
   constructor() { super('TitleScene'); }
+  // 🐛 버그 수정: 영구 업그레이드/캐릭터 잠금해제 구매 시 this.scene.restart()로 화면을
+  // 다시 그리는데, 그 전에 구매해둔 "1회성 아이템(폭탄/자석/선행학습)"과 선택 중이던 캐릭터가
+  // 지역 변수라서 재시작과 함께 초기화되어 사라지던 문제. init(data)로 이전 상태를 넘겨받아 복원한다.
+  init(data) {
+    data = data || {};
+    this.restoredSelectedChar = data.selectedChar || 0;
+    this.restoredOneTimeBomb = !!data.oneTimeBomb;
+    this.restoredOneTimeMagnet = !!data.oneTimeMagnet;
+    this.restoredOneTimeStartItem = !!data.oneTimeStartItem;
+  }
   create() {
     if (window.hideMobileControls) window.hideMobileControls();
     const width = this.cameras.main.width;
@@ -1290,7 +1301,7 @@ class TitleScene extends Phaser.Scene {
     }
     const charTeacherUnlocked = Achievements.isUnlocked('teacher_unlock');
     
-    let selectedChar = 0;
+    let selectedChar = this.restoredSelectedChar || 0;
     const chars = [
       { name: '회장', desc: '경험치 획득 범위 30% 넓음\n무기: 바른말 고운말', tex: 'player', weapon: 'praise' },
       { name: '장난꾸러기', desc: '이동속도 20% 빠름, 체력 20 낮음\n무기: 종이 비행기', tex: 'player_2', weapon: 'airplane' },
@@ -1338,7 +1349,8 @@ class TitleScene extends Phaser.Scene {
             SFX.buy();
             gold -= cost; localStorage.setItem('gold', gold);
             localStorage.setItem(key, level + 1);
-            this.scene.restart();
+            // 🐛 재시작해도 이미 골드를 낸 1회성 아이템과 선택 중이던 캐릭터가 사라지지 않도록 함께 전달
+            this.scene.restart({ selectedChar, oneTimeBomb, oneTimeMagnet, oneTimeStartItem });
           } else {
             SFX.error();
           }
@@ -1450,14 +1462,16 @@ class TitleScene extends Phaser.Scene {
     this.add.text(width/2 + 300, 395, '[ 1회성 아이템 (이번 판만 적용) ]', { fontSize: '21px', color: '#f1c40f', fontStyle: 'bold' }).setOrigin(0.5);
     this.add.text(width/2 + 300, 425, '(Z: 자석  /  X: 폭탄 사용)', { fontSize: '16px', color: '#bdc3c7' }).setOrigin(0.5);
     
-    let oneTimeBomb = false;
-    let oneTimeMagnet = false;
-    let oneTimeStartItem = false;
+    // 🐛 영구 업그레이드/캐릭터 구매로 인한 scene.restart() 이후에도 이미 구매했던 1회성
+    // 아이템이 사라지지 않도록, init()에서 넘겨받은 이전 상태로 초기값을 복원한다.
+    let oneTimeBomb = this.restoredOneTimeBomb;
+    let oneTimeMagnet = this.restoredOneTimeMagnet;
+    let oneTimeStartItem = this.restoredOneTimeStartItem;
     
-    const drawOneTime = (y, label, cost, onBuy) => {
-      let purchased = false;
-      let statusText = this.add.text(width/2 + 455, y, `대기`, { fontSize: '16px', color: '#95a5a6' }).setOrigin(0, 0.5);
-      let btn = this.add.text(width/2 + 130, y, `${cost}G`, { fontSize: '17px', backgroundColor: '#8e44ad', padding: {x:8,y:4} }).setOrigin(0, 0.5).setInteractive({useHandCursor:true});
+    const drawOneTime = (y, label, cost, alreadyPurchased, onBuy) => {
+      let purchased = alreadyPurchased;
+      let statusText = this.add.text(width/2 + 455, y, purchased ? '✓ 장착' : '대기', { fontSize: '16px', color: purchased ? '#2ecc71' : '#95a5a6' }).setOrigin(0, 0.5);
+      let btn = this.add.text(width/2 + 130, y, `${cost}G`, { fontSize: '17px', backgroundColor: purchased ? '#7f8c8d' : '#8e44ad', padding: {x:8,y:4} }).setOrigin(0, 0.5).setInteractive({useHandCursor:true});
       this.add.text(width/2 + 200, y, label, { fontSize: '18px', color: '#ecf0f1' }).setOrigin(0, 0.5);
       
       btn.on('pointerdown', () => {
@@ -1475,9 +1489,9 @@ class TitleScene extends Phaser.Scene {
       });
     };
     
-    drawOneTime(460, '💣 싹쓸이 폭탄', 50, () => { oneTimeBomb = true; });
-    drawOneTime(500, '🧲 강력 자석', 30, () => { oneTimeMagnet = true; });
-    drawOneTime(540, '📖 선행 학습 +1', 500, () => { oneTimeStartItem = true; });
+    drawOneTime(460, '💣 싹쓸이 폭탄', 50, oneTimeBomb, () => { oneTimeBomb = true; });
+    drawOneTime(500, '🧲 강력 자석', 30, oneTimeMagnet, () => { oneTimeMagnet = true; });
+    drawOneTime(540, '📖 선행 학습 +1', 500, oneTimeStartItem, () => { oneTimeStartItem = true; });
 
     // 시작 버튼
     const startBtn = this.add.text(width/2, 650, '▶ 등교하기 (게임 시작)', { fontSize: '36px', color: '#ffffff', backgroundColor: '#2ecc71', padding: { x: 40, y: 15 }, borderRadius: 10 }).setOrigin(0.5).setInteractive({ useHandCursor: true });
@@ -1499,7 +1513,8 @@ class TitleScene extends Phaser.Scene {
         gold -= c.cost;
         localStorage.setItem('gold', gold);
         localStorage.setItem(c.unlockKey, '1');
-        this.scene.restart();
+        // 🐛 재시작해도 이미 골드를 낸 1회성 아이템과 선택 중이던 캐릭터가 사라지지 않도록 함께 전달
+        this.scene.restart({ selectedChar, oneTimeBomb, oneTimeMagnet, oneTimeStartItem });
       } else {
         SFX.error();
       }
@@ -1597,9 +1612,11 @@ class GameScene extends Phaser.Scene {
     this.gameTime = 0;
     this.lastBossTime = 0; // 종합평가(5분마다) 스폰 타이밍
     this.lastUnitBossTime = 0; // 단원평가(60초마다) 스폰 타이밍
-    this.lastHomeworkBossTime = 0; // 방학숙제(최종보스, 15분마다) 스폰 타이밍
+    this.nextHomeworkBossTime = 900; // 방학숙제(최종보스) 다음 등장 시각(초). 기본 15분 간격, 30분(엔들리스) 이후엔 5분 간격으로 단축됨
     this.finalBossActive = false; // 종합평가 또는 방학숙제가 활동 중인 동안 단원평가 스폰 억제용
     this.homeworkBossActive = false; // 방학숙제가 활동 중인 동안 종합평가 스폰 억제용
+    this.stickerBuffExpireAt = 0; // ⭐ 칭찬 스티커 버프 만료 시각(this.time.now 기준). 새로 주우면 이 값만 갱신(연장)하고,
+                                   // 실제 배율 적용/해제는 항상 recalculateStats()가 이 값을 보고 판단하므로 중첩 픽업에도 안전함
     this.enemySpawnCounter = 0; // 몬스터가 스폰될 때마다 1씩 증가하는 고유 번호(슬로우/화상 등 지연 효과가 나중에 실행될 때, 그 사이에 같은 풀 슬롯이 다른 몬스터로 재사용되지 않았는지 확인하는 용도)
     this.lastNoticeCheckTime = 0; // 알림장 검사 이벤트 트리거용
     this.playerInDust = false; // 미세먼지 구름 근접 여부 (매 프레임 갱신)
@@ -1809,6 +1826,15 @@ class GameScene extends Phaser.Scene {
     this.stats.crit       = this.skills.clover * 0.1 + (this.selectedChar.name === '운동선수' ? 0.2 : 0);
     this.stats.projSpeed  = 1.0 + (this.skills.fan * 0.2);
     this.stats.poolRadiusMult = 1.0 + (this.selectedChar.name === '미술부원' ? 0.2 : 0);
+
+    // ⭐ 칭찬 스티커: 버프가 아직 유효한 동안만 배율을 곱해서 적용.
+    // recalculateStats()가 매번 이 시각을 다시 확인해서 배율을 새로 계산하는 방식이라(직접 곱해두고 나중에
+    // 되돌리는 방식이 아님), 버프 지속시간 중에 또 하나를 주워서 만료 시각을 늘려도 서로의 효과를 지우지 않음.
+    if (this.time.now < (this.stickerBuffExpireAt || 0)) {
+      this.stats.damageMult *= 1.2;
+      this.stats.speedMult *= 1.15;
+      this.stats.cooldownMult = Math.max(0.1, this.stats.cooldownMult * 0.85);
+    }
 
     // ⌚ 스마트워치: 쿨타임 감소 대신, 일정 체력의 방어막을 두르는 패시브로 변경.
     // 방어막은 실제 체력과 별개의 체력을 가지며, 다 닳으면 깨지고 일정 시간 후 다시 가득 찬 상태로 생성됨(무적이 아니라 "막아주는 체력").
@@ -2403,7 +2429,17 @@ class GameScene extends Phaser.Scene {
 
         const rand = Math.random();
       
-      if (time > 30 && rand < 0.15) {
+      if (time >= 1800 && rand > 0.93) {
+        // 🎚️ 엔들리스(30분 이후) 전용: 단원평가급 탱커가 "일반 몬스터"로 섞여서 나옴 (난이도 대폭 상향).
+        // 정식 보스가 아니라 흔한 몹 중 하나로 취급되도록 isBoss는 false로 둠(보스 체력바/경고문구/상자 없음).
+        enemy.setTexture('enemy_boss');
+        enemy.setTint(0x95a5a6);
+        enemy.hp = 400 + Math.floor(level * 30) + Math.floor(time * 7);
+        enemy.speed = 70 + Math.min(50, Math.floor(time / 10));
+        enemy.enemyType = 'boss_tank'; // 단원평가와 동일한 돌진 AI를 그대로 재사용
+        enemy.lastDash = this.time.now;
+        enemy.setScale(1.6);
+      } else if (time > 30 && rand < 0.15) {
         enemy.setTexture('enemy_fast');
         // 🎚️ 밸런스 패치: 스마트폰형은 시간에 따른 체력 증가가 전혀 없어 후반부에 사실상 종잇장이었음 - 시간 스케일링 추가
         enemy.hp = 5 + Math.floor(level * 2) + Math.floor(time / 3);
@@ -2434,7 +2470,7 @@ class GameScene extends Phaser.Scene {
         enemy.speed = 80 + Math.min(100, Math.floor(time / 5)); 
       }
       enemy.isBoss = false;
-      enemy.setScale(1.0);
+      if (enemy.enemyType !== 'boss_tank') enemy.setScale(1.0); // 엔들리스 전용 탱커는 위에서 이미 1.6배로 설정해뒀으므로 덮어쓰지 않음
       }
     }
   }
@@ -2992,7 +3028,22 @@ class GameScene extends Phaser.Scene {
         item.disableBody(true, true);
         SFX.gold();
         let gold = parseInt(localStorage.getItem('gold')) || 0;
-        const goldGain = Math.floor((10 + (this.skills.moneybook || 0) * 3) * (this.eventActive ? this.eventMultiplier : 1)); // 용돈기입장 레벨당 획득 골드 +3, 🔥 이벤트 중 2배
+        // 🎚️ 밸런스 패치: 몬스터 스폰 속도가 후반부로 갈수록 크게 빨라져서(스폰 딜레이가 최소 50ms까지 감소,
+        // 한 번에 나오는 마릿수도 최대 12마리까지 증가) 처치 속도 = 골드 수급 속도도 같이 기하급수적으로
+        // 폭증하는 문제가 있어, 8분(480초)부터 코인 한 개당 골드량을 줄이기 시작.
+        // 15분(900초)엔 50%, 20분(1200초)엔 10%까지 줄어들고, 그 이후로는 10%에서 더 안 줄어들게 함.
+        const t = this.registry.get('time');
+        let lateGameGoldMult;
+        if (t <= 480) {
+          lateGameGoldMult = 1;
+        } else if (t <= 900) {
+          lateGameGoldMult = 1 - (t - 480) * (0.5 / 420); // 8분→15분: 100%→50%
+        } else if (t <= 1200) {
+          lateGameGoldMult = 0.5 - (t - 900) * (0.4 / 300); // 15분→20분: 50%→10%
+        } else {
+          lateGameGoldMult = 0.1; // 20분 이후 하한선
+        }
+        const goldGain = Math.floor((10 + (this.skills.moneybook || 0) * 3) * lateGameGoldMult * (this.eventActive ? this.eventMultiplier : 1)); // 용돈기입장 레벨당 획득 골드 +3, 🔥 이벤트 중 2배
         gold += goldGain;
         localStorage.setItem('gold', gold.toString());
         let flashText = this.add.text(player.x, player.y - 40, `+${goldGain} G`, { fontSize: '20px', fill: '#f1c40f', fontStyle: 'bold', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
@@ -3027,16 +3078,14 @@ class GameScene extends Phaser.Scene {
         item.disableBody(true, true);
         SFX.pickupItem();
         const buffDuration = 6000 + this.skills.sticker * 500;
-        this.stats.damageMult *= 1.2;
-        this.stats.speedMult *= 1.15;
-        this.stats.cooldownMult = Math.max(0.1, this.stats.cooldownMult * 0.85);
-        this.updateWeaponTimers();
+        // 스택으로 곱해나가는 대신 만료 시각만 갱신(연장)하고, 실제 배율 적용은 항상 recalculateStats()가 담당.
+        // 이러면 버프 지속시간 중에 하나를 더 주워도 서로의 효과를 끊어먹지 않음.
+        this.stickerBuffExpireAt = this.time.now + buffDuration;
+        this.recalculateStats();
         let flashText = this.add.text(player.x, player.y - 40, '⭐ 칭찬 스티커! 능력치 상승!', { fontSize: '22px', fill: '#f1c40f', fontStyle: 'bold', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5);
         this.tweens.add({ targets: flashText, y: player.y - 80, alpha: 0, duration: 1200, onComplete: () => flashText.destroy() });
         this.time.delayedCall(buffDuration, () => {
-          if (this.player.active) {
-            this.recalculateStats();
-          }
+          if (this.player.active) this.recalculateStats();
         });
       }
 
@@ -3119,10 +3168,11 @@ class GameScene extends Phaser.Scene {
       this.scene.launch('LevelUpScene');
     }
 
-    // 방학숙제(최종보스): 15분마다 등장, 다른 두 보스보다 우선순위가 높음
-    if (timeSec > 0 && timeSec % 900 === 0 && timeSec !== this.lastHomeworkBossTime) {
-      this.lastHomeworkBossTime = timeSec;
+    // 방학숙제(최종보스): 기본 15분마다, 단 30분(엔들리스) 이후부터는 5분마다로 훨씬 자주 등장 (난이도 대폭 상향)
+    if (timeSec >= this.nextHomeworkBossTime) {
       this.spawnHomeworkBoss();
+      const homeworkInterval = timeSec >= 1800 ? 300 : 900;
+      this.nextHomeworkBossTime = timeSec + homeworkInterval;
     }
 
     // 종합평가: 5분마다 등장, 단 방학숙제가 활동 중일 때는 등장하지 않음
@@ -3654,11 +3704,20 @@ class UIScene extends Phaser.Scene {
     this.timeText = this.add.text(width/2, 65, '00:00', { fontSize: '32px', fill: '#ecf0f1', fontStyle: 'bold', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5, 0);
 
     // ── 보스 이름 + 체력바 (보스가 활성화된 동안만 표시) ──────────────────────────────
+    // 🐛 버그 수정: 단원평가(60초마다)는 이전 보스가 살아있어도 새로 스폰될 수 있어 같은 화면에
+    // 보스가 2마리 이상 동시에 존재할 수 있는데, 기존엔 체력바를 1개만 두고 "처음 찾은 보스"만
+    // 표시해 나머지 보스의 체력바가 보이지 않았음. 여러 마리를 동시에 보여줄 수 있도록 슬롯 방식으로 변경.
     const bossBarWidth = Math.min(500, width * 0.5);
-    this.bossNameText = this.add.text(width/2, 96, '', { fontSize: '20px', fill: '#fff', fontStyle: 'bold', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5).setVisible(false);
-    this.bossBarBg = this.add.rectangle(width/2, 122, bossBarWidth, 18, 0x000000, 0.6).setOrigin(0.5).setStrokeStyle(2, 0xffffff).setVisible(false);
-    this.bossBarFill = this.add.rectangle(width/2 - bossBarWidth/2, 122, bossBarWidth, 18, 0xe74c3c).setOrigin(0, 0.5).setVisible(false);
     this.bossBarWidth = bossBarWidth;
+    this.MAX_BOSS_BARS = 3; // 화면에 동시에 표시할 수 있는 보스 체력바 최대 개수
+    this.bossBars = [];
+    for (let i = 0; i < this.MAX_BOSS_BARS; i++) {
+      const rowY = 96 + i * 52;
+      const nameText = this.add.text(width/2, rowY, '', { fontSize: '20px', fill: '#fff', fontStyle: 'bold', stroke: '#000', strokeThickness: 4 }).setOrigin(0.5).setVisible(false);
+      const barBg = this.add.rectangle(width/2, rowY + 26, bossBarWidth, 18, 0x000000, 0.6).setOrigin(0.5).setStrokeStyle(2, 0xffffff).setVisible(false);
+      const barFill = this.add.rectangle(width/2 - bossBarWidth/2, rowY + 26, bossBarWidth, 18, 0xe74c3c).setOrigin(0, 0.5).setVisible(false);
+      this.bossBars.push({ nameText, barBg, barFill });
+    }
     
     const bagBtn = this.add.text(10, 65, '🎒 가방 (아이템 확인)', { fontSize: '22px', fill: '#fff', backgroundColor: '#8e44ad', padding: { x: 15, y: 8 }, borderRadius: 5 }).setInteractive({ useHandCursor: true });
     bagBtn.on('pointerdown', () => {
@@ -3690,7 +3749,7 @@ class UIScene extends Phaser.Scene {
         { key: 'bomb',   label: 'X', icon: '💣', color: '#e74c3c' }
       ];
       slotDefs.forEach((def, i) => {
-        const x = width - 90 + (i * 0) ;
+        const x = width - 90;
         const y = 720 - 90 - i * 70;
         const bg = this.add.rectangle(x, y, 60, 60, 0x000000, 0.5).setOrigin(0.5).setStrokeStyle(2, 0xffffff);
         const ico = this.add.text(x, y - 8, def.icon, { fontSize: '28px' }).setOrigin(0.5);
@@ -3753,22 +3812,32 @@ class UIScene extends Phaser.Scene {
       this.minimapGfx.fillRect(px, py, 3, 3);
     }
 
-    // ── 보스 이름 + 체력바 갱신 ──────────────────────────────
-    if (this.bossNameText && gs.enemies) {
-      let boss = null;
-      gs.enemies.getChildren().forEach(e => { if (e.active && e.isBoss && !boss) boss = e; });
-      if (boss) {
-        const bossNames = { boss_shooter: '종합평가', boss_tank: '단원평가', boss_final: '방학숙제' };
-        this.bossNameText.setText(bossNames[boss.enemyType] || '보스').setVisible(true);
-        this.bossBarBg.setVisible(true);
-        this.bossBarFill.setVisible(true);
+    // ── 보스 이름 + 체력바 갱신 (여러 마리가 동시에 있으면 슬롯별로 모두 표시) ──────────────────────────────
+    if (this.bossBars && gs.enemies) {
+      const bosses = [];
+      gs.enemies.getChildren().forEach(e => { if (e.active && e.isBoss) bosses.push(e); });
+      // 체력 비율이 낮은(더 위태로운) 보스를 위쪽 슬롯에 먼저 표시
+      bosses.sort((a, b) => (a.hp / (a.maxHp || a.hp)) - (b.hp / (b.maxHp || b.hp)));
+      const bossNames = { boss_shooter: '종합평가', boss_tank: '단원평가', boss_final: '방학숙제' };
+      const extraCount = Math.max(0, bosses.length - this.bossBars.length);
+
+      this.bossBars.forEach((bar, i) => {
+        const boss = bosses[i];
+        if (!boss) {
+          bar.nameText.setVisible(false);
+          bar.barBg.setVisible(false);
+          bar.barFill.setVisible(false);
+          return;
+        }
+        // 슬롯이 다 찼는데 표시 못 한 보스가 더 있다면, 맨 아래 슬롯에 "+N" 형태로 알려줌
+        const isLastVisibleSlot = i === this.bossBars.length - 1 && extraCount > 0;
+        const label = (bossNames[boss.enemyType] || '보스') + (isLastVisibleSlot ? ` 외 ${extraCount}` : '');
+        bar.nameText.setText(label).setVisible(true);
+        bar.barBg.setVisible(true);
+        bar.barFill.setVisible(true);
         const ratio = Phaser.Math.Clamp(boss.hp / (boss.maxHp || boss.hp), 0, 1);
-        this.bossBarFill.width = this.bossBarWidth * ratio;
-      } else {
-        this.bossNameText.setVisible(false);
-        this.bossBarBg.setVisible(false);
-        this.bossBarFill.setVisible(false);
-      }
+        bar.barFill.width = this.bossBarWidth * ratio;
+      });
     }
 
     if (!gs.consumables || !this.consumableSlots) return;
@@ -4061,8 +4130,10 @@ class AchievementScene extends Phaser.Scene {
     const progressFillW = Math.max(4, progressBarW * (unlockedAchCount / totalAchCount));
     this.add.rectangle(width/2 - progressBarW / 2, 82, progressFillW, 10, isAllClear ? 0x2ecc71 : 0xf1c40f).setOrigin(0, 0.5);
 
-    const startY = 104;
-    const rowH = 33;
+    const startY = 100;
+    // 상장 개수가 늘어나도 닫기 버튼과 겹치지 않도록, 남은 세로 공간에 맞춰 한 줄 높이를 자동으로 조절
+    const availableH = (height - 34 - 20) - startY;
+    const rowH = Math.min(33, availableH / ACHIEVEMENT_DEFS.length);
     ACHIEVEMENT_DEFS.forEach((ach, i) => {
       const y = startY + i * rowH;
       const unlocked = Achievements.isUnlocked(ach.id);

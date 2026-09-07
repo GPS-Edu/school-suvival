@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>학교 서바이벌</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -90,6 +90,26 @@
     .action-btn:active, #joy-base:active {
       background: rgba(255,255,255,0.3);
     }
+  </style>
+  <style id="school-ui-theme">
+    :root{color-scheme:dark;--ink:#f4f7ff;--muted:#a6b4cd;--line:#2b3c59;--panel:#142139;--accent:#adf36c;--gold:#ffda81;--blue:#82b6ff}
+    body{background:#091222;font-family:'Noto Sans KR','Malgun Gothic',sans-serif;color:var(--ink)}
+    *{box-sizing:border-box}button{font:inherit;cursor:pointer}button:disabled{cursor:not-allowed}button:focus-visible{outline:3px solid var(--gold);outline-offset:4px}button{touch-action:manipulation}
+    .ui-layer{position:fixed;inset:0;z-index:1100;color:var(--ink);font-size:16px;line-height:1.55}
+    .ui-layer h1,.ui-layer h2,.ui-layer h3,.ui-layer p{margin:0}.ui-layer h1{font-size:clamp(26px,3.5vw,42px);letter-spacing:-.065em;line-height:1.15}.ui-layer h2{font-size:22px;letter-spacing:-.04em}.ui-layer h3{font-size:17px}.muted{color:var(--muted)}.eyebrow{font-size:12px;font-weight:900;letter-spacing:.18em;color:var(--accent);margin-bottom:9px!important}.small{font-size:14px}.gold{color:var(--gold)}
+    .lobby{overflow:auto;background:radial-gradient(ellipse at 65% 0,#1a3053 0,transparent 55%),#091222;padding:clamp(16px,3vw,40px)}
+    .lobby-inner{max-width:1260px;margin:auto}.topline{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:26px}.actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.balance{padding:10px 18px;border:1px solid #665734;background:#2d2a24;border-radius:14px;font-weight:800;color:var(--gold);white-space:nowrap}.balance small{font-size:12px;font-weight:400;color:#e5cc9a;margin-right:10px}
+    .btn{min-height:44px;border:1px solid var(--line);border-radius:12px;padding:10px 16px;background:#1b2c46;color:var(--ink);font-weight:700;transition:background .15s,transform .15s}.btn:hover:not(:disabled){background:#2d4363;transform:translateY(-1px)}.btn:disabled{background:#182338;color:#96a4bb;border-color:#29364b}.btn.primary{background:var(--accent);color:#142509;border-color:var(--accent)}.btn.primary:hover:not(:disabled){background:#c4ff91}.btn.primary:disabled{background:#263548;border-color:#36465c;color:#a6b4cd}.btn.quiet{background:transparent}.btn.danger{color:#ffb3b9}.lobby-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(330px,1fr);gap:22px;align-items:start}.panel{background:linear-gradient(135deg,#192942,#122038);border:1px solid var(--line);border-radius:22px;overflow:hidden}.panel-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:22px 24px 0}.panel-heading .index{font-family:monospace;font-size:14px;color:#7f96b7}.tag{display:inline-block;font-size:12px;line-height:1.6;padding:4px 9px;border-radius:6px;background:#273d56;color:#c3ddff;font-weight:700}.tag.green{background:#253e2e;color:var(--accent)}
+    .character-stage{display:grid;grid-template-columns:190px 1fr;gap:26px;padding:26px 28px 22px;align-items:center;min-height:244px}.portrait{display:flex;align-items:center;justify-content:center;min-height:190px;background:radial-gradient(circle,#355c76 0,#203d55 45%,#172b44 70%);border:1px solid #355371;border-radius:20px;position:relative}.portrait img{width:128px;height:128px;image-rendering:pixelated;object-fit:contain;filter:drop-shadow(0 14px 0 #08101e55)}.character-copy h2{font-size:32px;margin:10px 0}.character-copy p{color:#c0cde0}.weapon{margin-top:16px!important;font-size:14px;color:var(--blue)!important}.roster{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px;padding:0 24px 22px}.char-btn{position:relative;display:flex;align-items:center;flex-direction:column;gap:7px;background:#0e1b30;border:1px solid #31425d;border-radius:12px;padding:12px 3px;color:#b9c6da;font-size:12px;min-width:0}.char-btn img{height:44px;width:44px;image-rendering:pixelated}.char-btn[aria-pressed=true]{border:2px solid var(--accent);background:#263b30;color:var(--accent);padding:11px 2px}.char-btn:hover{background:#253751}.lock{position:absolute;right:4px;top:2px;font-size:12px}.launch{padding:20px 24px;background:#0d1b2e;border-top:1px solid var(--line)}.launch .btn{width:100%;font-size:20px;min-height:58px}.launch p{margin-top:10px;text-align:center;font-size:14px}.guide{display:flex;flex-wrap:wrap;gap:12px 24px;margin-top:18px;padding:18px 22px;color:#bfcee3;font-size:14px}.guide strong{color:white;margin-right:8px}kbd{display:inline-block;font:700 12px inherit;background:#24344e;border:1px solid #485976;border-bottom-width:3px;padding:1px 7px;border-radius:5px;color:#eef4ff}.right-stack{display:grid;gap:18px}.shop{padding:6px 22px 16px}.shop-row{display:grid;grid-template-columns:36px 1fr auto;gap:12px;align-items:center;padding:15px 0;border-bottom:1px solid #2b3c5970}.shop-row:last-child{border-bottom:0}.item-icon{width:36px;height:40px;display:grid;place-items:center;font-size:22px;border-radius:10px;background:#25364f}.shop-row .btn{font-size:13px;min-width:91px;padding:8px 10px}.shop-row p{font-size:12px;color:#a9bad2;margin-top:3px}.dots{display:flex;gap:4px;margin-top:7px}.dots i{display:block;width:17px;height:4px;background:#354663;border-radius:2px}.dots i.on{background:var(--accent)}.supply-list{padding:6px 22px 12px}.footer-note{margin-top:20px!important;color:#a0b1cb;font-size:12px;display:flex;justify-content:space-between;gap:12px}
+    .modal-layer{background:#06101be8;backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto}.dialog{width:min(950px,100%);max-height:calc(100dvh - 48px);overflow:auto;background:linear-gradient(130deg,#1a2b47,#101e33);border:1px solid #405572;border-radius:24px;padding:30px;box-shadow:0 30px 100px #0008}.dialog.narrow{max-width:560px}.dialog-header{display:flex;justify-content:space-between;gap:20px;align-items:start;margin-bottom:24px}.dialog-header h2{font-size:30px}.dialog-footer{margin-top:24px;display:flex;gap:12px;justify-content:flex-end}.choice-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.choice{display:flex;flex-direction:column;gap:12px;text-align:left;min-height:265px;border:1px solid #486080;border-radius:18px;padding:22px;background:#1c304d;color:#f4f7ff}.choice:hover{border-color:var(--accent);background:#263e4d}.choice .big-icon{font-size:38px}.choice .desc{color:#bfcfe4;font-size:15px}.choice .choose{margin-top:auto;color:var(--accent);font-weight:bold;font-size:14px}.choice.evo{border-color:var(--gold)}.inventory-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}.inventory-item,.achievement-row{padding:16px 0;border-bottom:1px solid var(--line)}.inventory-item p{font-size:14px;color:var(--muted);margin-top:5px}.achievement-row{display:grid;grid-template-columns:40px 1fr auto;gap:12px;align-items:center}.achievement-row p{font-size:14px;color:var(--muted)}progress{appearance:none;width:100%;height:7px;border:0;border-radius:8px;overflow:hidden;background:#35435b}progress::-webkit-progress-bar{background:#35435b}progress::-webkit-progress-value{background:var(--accent)}.result-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:25px 0}.result-stats div{background:#0c1a2d;border:1px solid var(--line);border-radius:14px;padding:16px;text-align:center}.result-stats strong{display:block;font-size:26px;color:var(--accent)}.result-stats span{font-size:13px;color:var(--muted)}
+    .hud-layer{pointer-events:none;padding:16px;z-index:1050}.hud-top{display:grid;grid-template-columns:minmax(190px,280px) 150px minmax(190px,280px);justify-content:space-between;gap:12px}.hud-box{background:#0c192ded;border:1px solid #3b506d;border-radius:16px;padding:12px 16px;box-shadow:0 4px 20px #0003}.hp-label{display:flex;justify-content:space-between;font-size:14px;margin-bottom:6px}.hp-meter{height:9px;background:#4d2c3b;border-radius:9px;overflow:hidden}.hp-meter span{display:block;height:100%;background:#ff7c91;transition:width .15s}.exp-meter{height:5px;background:#35435b;border-radius:5px;overflow:hidden;margin-top:7px}.exp-meter span{display:block;height:100%;background:var(--accent)}.clock{text-align:center}.clock strong{font-size:28px;font-variant-numeric:tabular-nums;display:block;line-height:1.15}.clock small{color:#b3c4df;font-size:12px}.hud-right{text-align:right;font-size:14px}.hud-actions{margin-top:12px;display:flex;gap:8px;pointer-events:auto}.hud-actions .btn{background:#0c192ded;font-size:14px}.hud-consumables{position:absolute;right:18px;bottom:20px;display:flex;gap:10px;pointer-events:auto}.hud-consumables .btn{background:#122239ed;font-size:14px;min-width:100px}.hud-boss{margin:8px auto 0;max-width:360px;text-align:center;font-size:14px}.hud-boss progress{margin-top:4px}.ui-toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:2000;border:1px solid #6f8a5a;border-radius:12px;padding:13px 22px;background:#1e3526;color:#e3ffd4;max-width:90vw;box-shadow:0 8px 35px #0005;font:500 15px 'Noto Sans KR',sans-serif}.ui-layer[hidden]{display:none!important}#game-container canvas:focus-visible{outline:2px solid var(--accent)}
+    @media(pointer:fine){#mobile-controls{display:none!important}}
+    @media(pointer:coarse){.hud-consumables{display:none}.hud-actions .btn{min-height:44px}#joy-base{width:96px;height:96px;left:18px;bottom:18px}.action-btn{width:54px;height:54px}#action-buttons{right:18px;bottom:18px}}
+    @media(max-width:950px){.lobby-grid{grid-template-columns:1fr}.right-stack{grid-template-columns:1fr 1fr}.topline{align-items:start}.character-stage{grid-template-columns:160px 1fr}.portrait{min-height:170px}.hud-top{grid-template-columns:minmax(140px,1fr) 110px minmax(110px,1fr)}.hud-box{padding:9px 12px}.clock strong{font-size:23px}}
+    @media(max-width:600px){.lobby{padding:18px 12px}.topline{flex-direction:column;gap:16px;margin-bottom:18px}.actions{gap:8px}.actions .btn{padding:9px 12px;font-size:14px}.balance{padding:9px 12px}.right-stack{grid-template-columns:1fr}.character-stage{grid-template-columns:100px 1fr;gap:16px;padding:20px 16px}.portrait{min-height:130px}.portrait img{width:88px;height:88px}.character-copy h2{font-size:27px}.character-copy p{font-size:14px}.roster{grid-template-columns:repeat(4,1fr);padding:0 16px 18px}.char-btn{font-size:13px}.panel-heading{padding:20px 18px 0}.choice-grid,.inventory-grid{grid-template-columns:1fr}.choice{min-height:180px}.dialog{padding:22px 18px}.modal-layer{padding:12px}.dialog{max-height:calc(100dvh - 24px)}.dialog-header h2{font-size:25px}.dialog-footer{flex-wrap:wrap}.dialog-footer .btn{flex:1}.hud-layer{padding:8px}.hud-top{grid-template-columns:1fr 92px;gap:7px}.hud-right{display:none}.hud-actions{gap:6px;margin-top:8px}.hud-actions .btn{font-size:12px;padding:8px 10px}.hp-label{font-size:12px}.guide{padding:16px;gap:10px}.achievement-row{grid-template-columns:30px 1fr}.achievement-row>.gold{grid-column:2}.footer-note{flex-direction:column}.result-stats{gap:6px}.result-stats div{padding:12px 6px}}
+    .shop-row p{font-size:14px}.char-btn{font-size:14px}.shop-row .btn{font-size:14px}.ui-layer{word-break:keep-all;overflow-wrap:break-word}.dialog-footer{position:sticky;bottom:-30px;background:#132139;padding:14px 0;margin-bottom:-14px}
+    @media(max-width:760px){.choice-grid{grid-template-columns:1fr}.choice{min-height:0;gap:9px;padding:18px}.choice .big-icon{display:none}.choice .choose{margin-top:8px}.inventory-grid{grid-template-columns:1fr}}
+    @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
 </head>
@@ -1556,6 +1576,25 @@ class GameClearScene extends Phaser.Scene {
   }
 }
 
+// Contact damage uses a smaller, center-weighted hitbox than the artwork.
+// These values only affect damage from enemies and enemy projectiles;
+// weapon range, explosions, experience, and item pickup ranges stay unchanged.
+const CONTACT_HITBOX = Object.freeze({
+  playerRadius: 9,
+  enemyRadius: Object.freeze({
+    projectile: 4,
+    smartphone_shot: 4.5,
+    normal: 9,
+    smartphone: 7,
+    bomb: 9,
+    dust: 10,
+    sleep: 16,
+    boss_tank: 17,
+    boss_shooter: 17,
+    boss_final: 18
+  })
+});
+
 class GameScene extends Phaser.Scene {
   constructor() { super('GameScene'); }
   
@@ -1581,6 +1620,9 @@ class GameScene extends Phaser.Scene {
 
     this.player = this.physics.add.sprite(2000, 2000, this.selectedChar.tex);
     this.player.setCollideWorldBounds(true);
+    // Keep movement collisions close to the character's torso instead of the
+    // transparent edges of the 32x32 sprite.
+    this.player.body.setSize(18, 22, true);
     this.player.lastDirX = 1;
     this.player.lastDirY = 0;
 
@@ -1711,7 +1753,7 @@ class GameScene extends Phaser.Scene {
     }, this);
 
     this.physics.add.overlap(this.projectiles, this.enemies, this.hitEnemyWithProjectile, null, this);
-    this.physics.add.overlap(this.player, this.enemies, this.hurtPlayer, null, this);
+    this.physics.add.overlap(this.player, this.enemies, this.hurtPlayer, this.isAccurateDangerContact, this);
     this.physics.add.overlap(this.player, this.exps, this.collectExp, null, this);
     this.physics.add.overlap(this.player, this.items, this.collectItem, null, this);
 
@@ -2966,6 +3008,22 @@ class GameScene extends Phaser.Scene {
     return false;
   }
 
+  getDangerContactRadius(enemy) {
+    const baseRadius = CONTACT_HITBOX.enemyRadius[enemy.enemyType]
+      ?? CONTACT_HITBOX.enemyRadius.normal;
+    const displayScale = Math.max(Math.abs(enemy.scaleX || 1), Math.abs(enemy.scaleY || 1));
+    return baseRadius * displayScale;
+  }
+
+  isAccurateDangerContact(player, enemy) {
+    if (!player.active || !enemy.active) return false;
+
+    const dx = enemy.x - player.x;
+    const dy = enemy.y - player.y;
+    const reach = CONTACT_HITBOX.playerRadius + this.getDangerContactRadius(enemy);
+    return (dx * dx) + (dy * dy) <= reach * reach;
+  }
+
   hurtPlayer(player, enemy) {
     if (player.active && enemy.active && !player.invulnerable) {
       // 보스별 몸통 부딪힘 데미지 차등: 종합평가(80), 방학숙제(160)는 훨씬 아프게, 그 외 보스/일반 몬스터는 기존 그대로
@@ -3784,7 +3842,7 @@ class UIScene extends Phaser.Scene {
       this.minimapGfx.clear();
 
       // 몬스터: 검정 점
-      this.minimapGfx.fillStyle(0x000000, 1);
+      this.minimapGfx.fillStyle(0xdce6f4, 1);
       gs.enemies.getChildren().forEach(e => {
         if (e.active) {
           const ex = Phaser.Math.Clamp(mapX + (e.x / worldW) * size, mapX, mapX + size - 2);
@@ -4158,11 +4216,159 @@ class AchievementScene extends Phaser.Scene {
   }
 }
 
+// ═══ UI 리뉴얼: 화면/문구/색상만 수정하려면 이 구역과 #school-ui-theme를 편집하세요. ═══
+const SchoolUI = {
+  selected: 0, supplies: (()=>{try{const s=JSON.parse(localStorage.getItem('schoolPendingSupplies'))||{};return Object.fromEntries(['oneTimeMagnet','oneTimeBomb','oneTimeStartItem'].filter(k=>s[k]===true).map(k=>[k,true]));}catch{return {};}})(),
+  saveSupplies() { localStorage.setItem('schoolPendingSupplies',JSON.stringify(this.supplies)); },
+  num(key) { return Math.max(0, parseInt(localStorage.getItem(key)) || 0); },
+  fmt(value) { return Number(value || 0).toLocaleString('ko-KR'); },
+  esc(value) { return String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); },
+  time(t) { return `${String(Math.floor((t||0)/60)).padStart(2,'0')}:${String(Math.floor((t||0)%60)).padStart(2,'0')}`; },
+  chars() { return [
+    {name:'회장',tex:'player',weapon:'praise',role:'수집에 유리',desc:'경험치를 줍는 범위가 30% 넓어요.'},
+    {name:'장난꾸러기',tex:'player_2',weapon:'airplane',role:'종이 비행기 공격',desc:'운동장에서 종이 비행기를 날리며 시작해요.'},
+    {name:'운동선수',tex:'player_3',weapon:'soccer',role:'치명타 공격',desc:'치명타 확률 +20% · 튕기는 축구공으로 공격'},
+    {name:'음악가',tex:'player_4',weapon:'recorder',role:'빠른 공격',desc:'모든 무기의 대기시간이 10% 짧아요.'},
+    {name:'미술부원',tex:'player_5',weapon:'paint',role:'넓은 범위',desc:'웅덩이·안전지대 등 바닥에 남는 무기의 범위 +20%'},
+    {name:'모범생',tex:'player_6',weapon:['library','praise'],role:'빠른 성장',desc:'경험치 획득량 +20% · 무기 2개로 시작',locked:!this.num('charScholarUnlocked'),cost:10000},
+    {name:'선생님',tex:'player_7',weapon:'praise',role:'히든 캐릭터',desc:'모든 상장을 모으면 함께할 수 있어요.',locked:!Achievements.isUnlocked('teacher_unlock')}
+  ]; },
+  upgrades:[['upgHp','♥','체력 단련','레벨당 최대 체력 +15',5],['upgSpeed','↗','달리기 연습','이동속도 증가',5],['upgExp','✦','매점 VIP','경험치 획득량 증가',5],['upgMagnet','◎','자력 증가','아이템 수집 범위 증가',5],['upgStartItem','▣','선행 학습','시작 무기 추가',2]],
+  items:[['oneTimeMagnet','🧲','강력 자석','주변 아이템 수집 · Z',30],['oneTimeBomb','💣','싹쓸이 폭탄','주변 방해꾼 정리 · X',50],['oneTimeStartItem','📖','선행 학습','이번 판 시작 무기 +1',500]],
+  toast(message) {
+    document.querySelector('.ui-toast')?.remove();
+    const node=document.createElement('div'); node.className='ui-toast'; node.setAttribute('role','status'); node.textContent=message; document.body.append(node); setTimeout(()=>node.remove(),3000);
+  },
+  mount(scene, html, cls='modal-layer', onEscape) {
+    scene._ui?.remove();
+    const node=document.createElement('section'); node.className=`ui-layer ${cls}`; node.innerHTML=html; document.body.append(node); scene._ui=node;
+    const previous=document.activeElement;
+    const modal=cls==='modal-layer';
+    if(modal){node.setAttribute('role','dialog');node.setAttribute('aria-modal','true');node.setAttribute('aria-label',node.querySelector('h2')?.textContent||'게임 메뉴');window.hideMobileControls?.();document.querySelector('.hud-layer')?.setAttribute('inert','');document.querySelector('.lobby')?.setAttribute('inert','');}
+    const key=e=>{
+      if(e.key==='Escape'&&onEscape){e.preventDefault();e.stopPropagation();onEscape();}
+      if(modal&&e.key==='Tab'){const list=[...node.querySelectorAll('button:not(:disabled),[tabindex="0"]')];const first=list[0],last=list.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}
+    };
+    node.addEventListener('keydown',key);
+    if(cls!=='hud-layer') requestAnimationFrame(()=>node.querySelector('.primary:not(:disabled),.choice,button:not(:disabled)')?.focus({preventScroll:true}));
+    scene.events.once('shutdown',()=>{node.remove();if(modal){document.querySelector('.hud-layer')?.removeAttribute('inert');document.querySelector('.lobby')?.removeAttribute('inert');if(previous?.isConnected)previous.focus();}if(scene._ui===node)scene._ui=null;});
+    return node;
+  },
+  button(root, selector, action) { root.querySelector(selector)?.addEventListener('click',action); },
+  resume(scene) { SFX.click(); scene.scene.resume('GameScene'); scene.scene.stop(); },
+  home(scene) { scene.scene.stop('GameScene');scene.scene.stop('UIScene');scene.scene.start('TitleScene'); },
+  dialog(title, sub, body, footer='', narrow=false) { return `<div class="dialog ${narrow?'narrow':''}"><header class="dialog-header"><div><p class="eyebrow">SCHOOL SURVIVAL</p><h2>${title}</h2><p class="muted small">${sub}</p></div></header>${body}${footer?`<footer class="dialog-footer">${footer}</footer>`:''}</div>`; },
+  stats(scene) { const r=scene.registry;return `<div class="result-stats"><div><strong>${this.time(r.get('time'))}</strong><span>생존 시간</span></div><div><strong>${r.get('level')||1}</strong><span>도달 레벨</span></div><div><strong>${this.fmt(r.get('kills'))}</strong><span>물리친 방해꾼</span></div></div>`; }
+};
+
+// HTML 메뉴 위에서도 업적과 이벤트 안내를 읽을 수 있게 표시합니다.
+Achievements.showToasts=function(scene, achievements){
+  const list=achievements?achievements.slice():[];
+  const teacher=this.checkAllComplete();if(teacher)list.push(teacher);
+  if(list.length)SchoolUI.toast(list.map(a=>`🏆 ${a.name} · +${SchoolUI.fmt(a.goldReward)} G`).join(' / '));
+};
+
+TitleScene.prototype.create=function(){
+  window.hideMobileControls?.();
+  if(SchoolUI.num('charScholarUnlocked')){const ach=Achievements.unlock('scholar_unlock');if(ach)Achievements.showToasts(this,[ach]);}
+  const render=(focus)=>{
+    const U=SchoolUI, chars=U.chars(), c=chars[U.selected], gold=U.num('gold');
+    const sprite=tex=>this.textures.getBase64(tex);
+    const weapon=(Array.isArray(c.weapon)?c.weapon:[c.weapon]).map(k=>SKILL_DATA[k].name).join(' + ');
+    const upgradeRows=U.upgrades.map(([key,icon,name,desc,max])=>{const level=U.num(key),cost=(max===2?[3000,10000]:[10,100,500,1000,2000])[level];return `<div class="shop-row"><span class="item-icon" aria-hidden="true">${icon}</span><div><h3>${name}</h3><p>${desc} · ${level}/${max}</p><div class="dots" aria-hidden="true">${Array.from({length:max},(_,i)=>`<i class="${i<level?'on':''}"></i>`).join('')}</div></div><button class="btn" data-upgrade="${key}" ${level>=max||gold<cost?'disabled':''} aria-label="${name} ${level>=max?'최대 레벨':`${cost} 골드로 구매`}">${level>=max?'완료 ✓':`${U.fmt(cost)} G`}<br><span class="small">${level>=max?'MAX':gold<cost?'골드 부족':'구매'}</span></button></div>`;}).join('');
+    const supplies=U.items.map(([key,icon,name,desc,cost])=>`<div class="shop-row"><span class="item-icon" aria-hidden="true">${icon}</span><div><h3>${name}</h3><p>${desc}</p></div><button class="btn" data-supply="${key}" ${U.supplies[key]||gold<cost?'disabled':''} aria-label="${name} ${cost} 골드로 구매">${U.supplies[key]?'준비 완료 ✓':`${cost} G`}<br>${U.supplies[key]?'장착됨':gold<cost?'골드 부족':'구매'}</button></div>`).join('');
+    const root=U.mount(this,`<main class="lobby-inner"><header class="topline"><div><p class="eyebrow">SCHOOL SURVIVAL</p><h1>학교 서바이벌<span style="color:var(--accent)">.</span></h1></div><div class="actions"><div class="balance"><small>보유 골드</small>◈ ${U.fmt(gold)} G</div><button class="btn quiet" id="awards">🏆 상장첩</button><button class="btn quiet" id="sound" aria-pressed="${!SFX.isMuted()}">${SFX.isMuted()?'🔇 소리 꺼짐':'🔊 소리 켜짐'}</button></div></header><div class="lobby-grid"><div><section class="panel"><div class="panel-heading"><h2>오늘의 캐릭터</h2><span class="index">01 / 등교 준비</span></div><div class="character-stage"><div class="portrait"><img src="${sprite(c.tex)}" alt="${c.name} 캐릭터"></div><div class="character-copy"><span class="tag green">${c.role}</span><h2>${c.name}</h2><p>${c.desc}</p><p class="weapon">시작 무기<br><strong>${weapon}</strong></p></div></div><div class="roster" role="group" aria-label="캐릭터 선택">${chars.map((ch,i)=>`<button class="char-btn" data-char="${i}" aria-pressed="${i===U.selected}" aria-label="${ch.name}${ch.locked?' (잠김)':''}"><img src="${sprite(ch.tex)}" alt="">${ch.locked?'<span class="lock">🔒</span>':''}<span>${ch.name}</span></button>`).join('')}</div><div class="launch"><button class="btn primary" id="start" ${c.locked&&(!c.cost||gold<c.cost)?'disabled':''}>${c.locked?(c.cost?`${U.fmt(c.cost)} G로 캐릭터 해금`:'상장첩을 완성하면 해금'):'등교하기  →'}</button><p class="muted">${c.locked?(c.cost?'골드를 모아 모범생을 영구 해금하세요.':'선생님을 제외한 모든 상장을 달성하세요.'):'30분 동안 살아남아 졸업에 도전하세요.'}</p></div></section><aside class="panel guide" aria-label="조작 방법"><span><strong>이동</strong><kbd>W A S D</kbd> / 방향키</span><span><strong>공격</strong>자동</span><span><strong>자석</strong><kbd>Z</kbd></span><span><strong>폭탄</strong><kbd>X</kbd></span><span><strong>일시정지</strong><kbd>Esc</kbd></span><span class="muted">터치 화면에서는 가상 조이스틱을 사용하세요.</span></aside></div><div class="right-stack"><section class="panel"><div class="panel-heading"><div><h2>성장 상점</h2><p class="muted small">한 번 구매하면 계속 적용돼요.</p></div><span class="tag">영구</span></div><div class="shop">${upgradeRows}</div></section><section class="panel"><div class="panel-heading"><div><h2>오늘의 준비물</h2><p class="muted small">선택 구매 · 다음 한 판에만 적용</p></div><span class="tag">1회</span></div><div class="supply-list">${supplies}</div></section></div></div><footer class="footer-note"><span>경험치를 모으고, 무기를 고르고, 더 오래 살아남으세요.</span><span>진행도는 현재 브라우저에 자동 저장됩니다.</span></footer></main>`,'lobby');
+    root.querySelectorAll('[data-char]').forEach(b=>b.onclick=()=>{SFX.click();U.selected=Number(b.dataset.char);render(`[data-char="${U.selected}"]`);});
+    root.querySelectorAll('[data-upgrade]').forEach(b=>b.onclick=()=>{const def=U.upgrades.find(d=>d[0]===b.dataset.upgrade),level=U.num(def[0]),cost=(def[4]===2?[3000,10000]:[10,100,500,1000,2000])[level];if(cost==null||U.num('gold')<cost)return;localStorage.setItem('gold',U.num('gold')-cost);localStorage.setItem(def[0],level+1);SFX.buy();render();U.toast(`${def[2]} Lv.${level+1} · 다음 판부터 적용됩니다.`);});
+    root.querySelectorAll('[data-supply]').forEach(b=>b.onclick=()=>{const d=U.items.find(i=>i[0]===b.dataset.supply);if(U.supplies[d[0]]||U.num('gold')<d[4])return;localStorage.setItem('gold',U.num('gold')-d[4]);U.supplies[d[0]]=true;U.saveSupplies();SFX.buy();render();U.toast(`${d[2]} 준비 완료 · 다음 한 판에 적용됩니다.`);});
+    U.button(root,'#sound',()=>{SFX.toggleMuted();render('#sound');});
+    U.button(root,'#awards',()=>{this.scene.pause();this.scene.launch('AchievementScene');});
+    U.button(root,'#start',()=>{if(c.locked){if(!c.cost||U.num('gold')<c.cost)return;localStorage.setItem('gold',U.num('gold')-c.cost);localStorage.setItem('charScholarUnlocked','1');const a=Achievements.unlock('scholar_unlock');if(a)Achievements.showToasts(this,[a]);SFX.buy();render('#start');return;}const data={character:c,...U.supplies};U.upgrades.forEach(d=>data[d[0]]=U.num(d[0]));U.supplies={};U.saveSupplies();SFX.click();document.activeElement?.blur();this.scene.start('GameScene',data);});
+    if(focus)requestAnimationFrame(()=>root.querySelector(focus)?.focus({preventScroll:true}));
+  };
+  render();
+};
+
+// 레벨업/보물상자의 후보 생성과 보상 계산은 원래 게임 로직을 그대로 사용합니다.
+const originalLevelCreate=LevelUpScene.prototype.create;
+LevelUpScene.prototype.create=function(){
+  originalLevelCreate.call(this);
+  const cards=this.children.list.filter(o=>o.type==='Container');
+  const choices=cards.map(card=>({bg:card.list[0],title:card.list[1].text,desc:card.list[2].text,icon:card.list[3].text}));
+  this.children.list.forEach(o=>o.setVisible(false));
+  const U=SchoolUI,root=U.mount(this,U.dialog('새로운 배움을 선택하세요','하나를 고르면 바로 적용되고 게임이 이어집니다.',`<div class="choice-grid">${choices.map((c,i)=>`<button class="choice ${c.title.includes('진화')?'evo':''}" data-choice="${i}"><span class="tag">${c.title.includes('진화')?'진화':c.title.includes('신규')?'새로운 아이템':'능력 강화'}</span><span class="big-icon" aria-hidden="true">${c.icon}</span><h3>${U.esc(c.title)}</h3><span class="desc">${U.esc(c.desc)}</span><span class="choose">선택하기 <kbd>${i+1}</kbd> →</span></button>`).join('')}</div>`));
+  let picked=false;const choose=i=>{if(picked||!choices[i])return;picked=true;choices[i].bg.emit('pointerdown');};
+  root.querySelectorAll('[data-choice]').forEach(b=>b.onclick=()=>choose(Number(b.dataset.choice)));
+  root.addEventListener('keydown',e=>{if(['1','2','3'].includes(e.key)){e.preventDefault();choose(Number(e.key)-1);}});
+};
+const originalChestCreate=ChestScene.prototype.create;
+ChestScene.prototype.create=function(){
+  originalChestCreate.call(this);
+  const rewards=this.children.list.filter(o=>o.type==='Container').map(o=>o.list[1].text);
+  const close=this.children.list.find(o=>o.type==='Text'&&o.text.includes('모두 받기'));
+  this.children.list.forEach(o=>o.setVisible(false));
+  const U=SchoolUI,root=U.mount(this,U.dialog('보물상자를 발견했어요','아래 보상이 가방에 추가되었습니다.',`<div>${rewards.map(t=>`<div class="inventory-item"><h3>${U.esc(t)}</h3></div>`).join('')}</div>`,'<button class="btn primary" id="chest-close">확인하고 계속하기 →</button>'));
+  U.button(root,'#chest-close',()=>{if(close)close.emit('pointerdown');});
+  // 원본의 지연 표시가 다시 캔버스 위에 나타나지 않게 카메라만 숨깁니다.
+  this.cameras.main.setVisible(false);this.events.once('shutdown',()=>this.cameras.main.setVisible(true));
+};
+InventoryScene.prototype.create=function(){
+  const U=SchoolUI,gs=this.scene.get('GameScene');
+  const section=type=>Object.entries(gs.skills).filter(([k,v])=>v>0&&SKILL_DATA[k]?.type===type).map(([k,v])=>{const s=SKILL_DATA[k];return `<div class="inventory-item"><h3>${s.icon} ${U.esc(v>=6?s.evoName:s.name)} <span class="tag">${v>=6?'진화 완료':`Lv.${v}`}</span></h3><p>${U.esc(s.desc)}</p>${type==='active'&&v<6?`<p class="gold">진화: 무기 Lv.5 + ${U.esc(SKILL_DATA[s.evoPassive]?.name||'장비')}</p>`:''}</div>`;}).join('')||'<p class="muted" style="padding:20px 0">아직 장착한 아이템이 없어요.</p>';
+  const root=U.mount(this,U.dialog('내 가방','게임이 일시정지되었습니다. 장착한 무기와 장비를 확인하세요.',`<div class="inventory-grid"><section><h3>⚔ 무기 · 자동 공격</h3>${section('active')}</section><section><h3>◈ 장비 · 능력 강화</h3>${section('passive')}</section></div>`,'<button class="btn primary" id="bag-close">게임으로 돌아가기 <kbd>Esc</kbd></button>'),'modal-layer',()=>U.resume(this));
+  U.button(root,'#bag-close',()=>U.resume(this));
+};
+AchievementScene.prototype.create=function(){
+  const U=SchoolUI,count=ACHIEVEMENT_DEFS.filter(a=>Achievements.isUnlocked(a.id)).length;
+  const stat={kills:'totalKills',plays:'totalPlays',survival:'bestSurvival',items:'totalItems'};
+  const rows=ACHIEVEMENT_DEFS.map(a=>{const done=Achievements.isUnlocked(a.id),v=Math.min(a.threshold||1,Achievements.getStat(stat[a.category]));return `<div class="achievement-row"><span style="font-size:26px">${a.icon}</span><div><h3>${U.esc(a.name)} ${done?'<span class="tag green">달성 ✓</span>':''}</h3><p>${U.esc(a.desc)}</p>${a.threshold?`<progress value="${done?a.threshold:v}" max="${a.threshold}" aria-label="${U.esc(a.name)} 진행도"></progress><p>${U.fmt(done?a.threshold:v)} / ${U.fmt(a.threshold)}</p>`:''}</div><span class="gold small">+${U.fmt(a.goldReward)} G</span></div>`;}).join('');
+  const close=()=>{this.scene.resume('TitleScene');this.scene.stop();};
+  const root=U.mount(this,U.dialog('나의 상장첩',`${count} / ${ACHIEVEMENT_DEFS.length}개 달성 · 달성 보상은 자동으로 지급돼요.`,rows,'<button class="btn primary" id="awards-close">돌아가기 <kbd>Esc</kbd></button>'),'modal-layer',close);U.button(root,'#awards-close',close);
+};
+GameOverScene.prototype.create=function(){window.hideMobileControls?.();const U=SchoolUI;const root=U.mount(this,U.dialog('오늘의 도전, 수고했어요!','모은 골드로 성장하고 다시 도전해 보세요.',U.stats(this),'<button class="btn primary" id="home">상점과 캐릭터 선택으로 →</button>',true));U.button(root,'#home',()=>U.home(this));};
+const originalClearCreate=GameClearScene.prototype.create;
+GameClearScene.prototype.create=function(){originalClearCreate.call(this);this.children.list.forEach(o=>o.setVisible(false));const U=SchoolUI,root=U.mount(this,U.dialog('졸업을 축하합니다!','30분 생존 성공 · 방과후에도 도전을 이어갈 수 있어요.',U.stats(this),'<button class="btn" id="home">하교하기</button><button class="btn primary" id="continue">방과후 계속하기 →</button>',true));U.button(root,'#home',()=>U.home(this));U.button(root,'#continue',()=>U.resume(this));};
+class PauseScene extends Phaser.Scene {
+  constructor(){super('PauseScene');}
+  create(){const U=SchoolUI;const root=U.mount(this,U.dialog('잠깐 쉬어가세요','게임이 일시정지되었습니다.',`${U.stats(this)}<p class="muted">이동: WASD / 방향키 · 공격: 자동<br>자석: Z · 폭탄: X · 일시정지: Esc</p>`,'<button class="btn danger" id="leave">메인으로 나가기</button><button class="btn primary" id="resume">계속하기 <kbd>Esc</kbd></button>',true),'modal-layer',()=>U.resume(this));U.button(root,'#resume',()=>U.resume(this));U.button(root,'#leave',()=>{root.querySelector('.dialog').innerHTML=U.dialog('이번 도전을 마칠까요?','모은 골드는 보관되지만, 현재 판은 이어할 수 없어요.','', '<button class="btn" id="cancel">계속 쉬기</button><button class="btn danger" id="confirm">도전 마치기</button>',true);U.button(root,'#cancel',()=>{this.scene.restart();});U.button(root,'#confirm',()=>U.home(this));root.querySelector('#cancel').focus();});}
+}
+const originalUICreate=UIScene.prototype.create,originalUIUpdate=UIScene.prototype.update;
+UIScene.prototype.create=function(){
+  originalUICreate.call(this);
+  // 기존 미니맵과 화면 효과는 유지하고, HUD 텍스트/버튼을 반응형 HTML로 교체합니다.
+  this.children.list.forEach(o=>{if(o.type==='Text'||o===this.expBar||o.input||this.consumableSlots.some(s=>[s.bg,s.ico,s.keyLbl].includes(o)))o.setVisible(false);});
+  this.children.list[0].setVisible(false);
+  this.bossBars.forEach(bar=>{bar.nameText.setVisible(false);bar.barBg.setVisible(false);bar.barFill.setVisible(false);});
+  const U=SchoolUI,root=U.mount(this,`<div class="hud-top"><div class="hud-box"><div class="hp-label"><strong id="hud-level">Lv.1</strong><span id="hud-hp">체력 100 / 100</span></div><div class="hp-meter" role="meter" aria-label="체력" aria-valuemin="0"><span id="hp-fill"></span></div><div class="exp-meter" role="meter" aria-label="경험치" aria-valuemin="0"><span id="exp-fill"></span></div></div><div class="hud-box clock"><small>생존 시간</small><strong id="hud-time">00:00</strong></div><div class="hud-box hud-right"><div>방해꾼 <strong id="hud-kills">0</strong> 처치</div><div class="gold">◈ <span id="hud-gold">0</span> G</div></div></div><div class="hud-actions"><button class="btn" id="hud-bag">🎒 내 가방</button><button class="btn" id="hud-pause">Ⅱ 일시정지</button><button class="btn" id="hud-sound" aria-label="소리 켜기 또는 끄기">${SFX.isMuted()?'🔇':'🔊'}</button></div><div class="hud-box hud-boss" id="boss-list" hidden></div><div class="hud-consumables"><button class="btn" id="use-magnet">🧲 자석 <kbd>Z</kbd></button><button class="btn" id="use-bomb">💣 폭탄 <kbd>X</kbd></button></div>`,'hud-layer');
+  this.domRefs=Object.fromEntries([...root.querySelectorAll('[id]')].map(n=>[n.id,n]));
+  const open=name=>{if(!this.scene.isActive('GameScene'))return;SFX.click();this.scene.pause('GameScene');this.scene.launch(name);};
+  U.button(root,'#hud-bag',()=>open('InventoryScene'));U.button(root,'#hud-pause',()=>open('PauseScene'));U.button(root,'#hud-sound',()=>{SFX.toggleMuted();this.domRefs['hud-sound'].textContent=SFX.isMuted()?'🔇':'🔊';});
+  U.button(root,'#use-magnet',()=>{if(this.scene.isActive('GameScene'))window.touchZPressed=true;});U.button(root,'#use-bomb',()=>{if(this.scene.isActive('GameScene'))window.touchXPressed=true;});
+  const pauseKey=e=>{if(e.key==='Escape'&&this.scene.isActive('GameScene')){e.preventDefault();open('PauseScene');}};document.addEventListener('keydown',pauseKey);this.events.once('shutdown',()=>document.removeEventListener('keydown',pauseKey));
+};
+UIScene.prototype.update=function(time,delta){
+  originalUIUpdate.call(this,time,delta);
+  this.bossBars.forEach(bar=>{bar.nameText.setVisible(false);bar.barBg.setVisible(false);bar.barFill.setVisible(false);});
+  if(!this.domRefs)return;const r=this.registry,d=this.domRefs,U=SchoolUI,gs=this.scene.get('GameScene');
+  const set=(id,text)=>{if(d[id].textContent!==String(text))d[id].textContent=text;};
+  set('hud-level',`Lv.${r.get('level')||1}`);set('hud-hp',`체력 ${Math.max(0,Math.floor(r.get('hp')||0))} / ${r.get('maxHp')||100}`);set('hud-time',U.time(r.get('time')));set('hud-kills',U.fmt(r.get('kills')));set('hud-gold',U.fmt(U.num('gold')));
+  const hp=Math.max(0,Math.min(1,(r.get('hp')||0)/(r.get('maxHp')||1))),exp=Math.min(1,(r.get('exp')||0)/(r.get('maxExp')||1));
+  d['hp-fill'].style.width=`${hp*100}%`;d['exp-fill'].style.width=`${exp*100}%`;
+  for(const [id,value,max] of [['hp-fill',Math.max(0,r.get('hp')||0),r.get('maxHp')||1],['exp-fill',r.get('exp')||0,r.get('maxExp')||1]]){d[id].parentElement.setAttribute('aria-valuenow',value);d[id].parentElement.setAttribute('aria-valuemax',max);}
+  d['use-magnet'].disabled=!gs.consumables?.magnet;d['use-bomb'].disabled=!gs.consumables?.bomb;
+  const bosses=(gs.enemies?.getChildren()||[]).filter(e=>e.active&&e.isBoss).sort((a,b)=>(a.hp/(a.maxHp||a.hp))-(b.hp/(b.maxHp||b.hp)));
+  const limit=this.MAX_BOSS_BARS||3,shown=bosses.slice(0,limit),extra=Math.max(0,bosses.length-limit),list=d['boss-list'];list.hidden=!bosses.length;
+  while(list.children.length<shown.length){const row=document.createElement('div');row.innerHTML='<span></span><progress></progress>';list.append(row);}
+  while(list.children.length>shown.length)list.lastElementChild.remove();
+  shown.forEach((boss,i)=>{const row=list.children[i],label=({boss_shooter:'종합평가',boss_tank:'단원평가',boss_final:'방학숙제'})[boss.enemyType]||'보스';row.firstElementChild.textContent=label+(i===shown.length-1&&extra?' 외 '+extra+'마리':'');const bar=row.lastElementChild;bar.max=boss.maxHp||boss.hp||1;bar.value=Math.max(0,boss.hp);bar.setAttribute('aria-label',label+' '+(i+1)+' 체력');});
+};
+
+
 const config = {
   type: Phaser.AUTO, width: 1280, height: 720, parent: 'game-container', pixelArt: true, roundPixels: true,
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   physics: { default: 'arcade', arcade: { gravity: { y: 0 }, debug: false } },
-  scene: [BootScene, TitleScene, GameScene, UIScene, LevelUpScene, ChestScene, GameOverScene, InventoryScene, GameClearScene, AchievementScene, ToastScene]
+  scene: [BootScene, TitleScene, GameScene, UIScene, LevelUpScene, ChestScene, GameOverScene, InventoryScene, GameClearScene, AchievementScene, ToastScene, PauseScene]
 };
 // 🈶 웹폰트(Noto Sans KR) 로드를 기다린 뒤 게임 시작 - 캔버스 텍스트는 그려진 후엔
 // 폰트가 나중에 로드돼도 다시 그려지지 않으므로, 첫 렌더링 전에 폰트 준비를 보장한다.
